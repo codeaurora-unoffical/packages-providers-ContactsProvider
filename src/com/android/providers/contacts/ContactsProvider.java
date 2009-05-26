@@ -88,6 +88,12 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             + "LEFT OUTER JOIN presence ON (presence." + Presence.PERSON_ID + "=people._id) "
             + "LEFT OUTER JOIN photos ON (photos." + Photos.PERSON_ID + "=people._id)";
 
+    private static final String PEOPLE_PHONES_PHOTOS_ORGANIZATIONS_JOIN =
+            "people LEFT OUTER JOIN phones ON people.primary_phone=phones._id "
+            + "LEFT OUTER JOIN presence ON (presence." + Presence.PERSON_ID + "=people._id) "
+            + "LEFT OUTER JOIN photos ON (photos." + Photos.PERSON_ID + "=people._id) "
+            + "LEFT OUTER JOIN organizations ON (organizations._id=people.primary_organization)";
+
     private static final String GTALK_PROTOCOL_STRING =
             ContactMethods.encodePredefinedImProtocol(ContactMethods.PROTOCOL_GOOGLE_TALK);
 
@@ -821,12 +827,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             case GROUP_NAME_MEMBERS:
                 qb.setTables(PEOPLE_PHONES_JOIN);
                 qb.setProjectionMap(sPeopleProjectionMap);
-                qb.appendWhere("people._id IN (SELECT person FROM groupmembership JOIN groups " +
-                        "ON (group_id=groups._id OR " +
-                        "(group_sync_id = groups._sync_id AND " +
-                            "group_sync_account = groups._sync_account)) "+
-                        "WHERE " + Groups.NAME + "="
-                        + DatabaseUtils.sqlEscapeString(url.getPathSegments().get(2)) + ")");
+                qb.appendWhere(buildGroupNameMatchWhereClause(url.getPathSegments().get(2)));
                 break;
                 
             case GROUP_SYSTEM_ID_MEMBERS_FILTER:
@@ -838,12 +839,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             case GROUP_SYSTEM_ID_MEMBERS:
                 qb.setTables(PEOPLE_PHONES_JOIN);
                 qb.setProjectionMap(sPeopleProjectionMap);
-                qb.appendWhere("people._id IN (SELECT person FROM groupmembership JOIN groups " +
-                        "ON (group_id=groups._id OR " +
-                        "(group_sync_id = groups._sync_id AND " +
-                            "group_sync_account = groups._sync_account)) "+
-                        "WHERE " + Groups.SYSTEM_ID + "="
-                        + DatabaseUtils.sqlEscapeString(url.getPathSegments().get(2)) + ")");
+                qb.appendWhere(buildGroupSystemIdMatchWhereClause(url.getPathSegments().get(2)));
                 break;
 
             case PEOPLE:
@@ -922,6 +918,13 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                 if (c != null) {
                     return c;
                 }
+                break;
+            }
+            case SEARCH_SHORTCUT: {
+                qb.setTables(PEOPLE_PHONES_PHOTOS_ORGANIZATIONS_JOIN);
+                qb.setProjectionMap(sSearchSuggestionsProjectionMap);
+                qb.appendWhere(SearchManager.SUGGEST_COLUMN_SHORTCUT_ID + "=");
+                qb.appendWhere(url.getPathSegments().get(1));
                 break;
             }
             case PEOPLE_STREQUENT: {
@@ -1242,12 +1245,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             case LIVE_FOLDERS_PEOPLE_GROUP_NAME:
                 qb.setTables("people LEFT OUTER JOIN photos ON (people._id = photos.person)");
                 qb.setProjectionMap(sLiveFoldersProjectionMap);
-                qb.appendWhere("people._id IN (SELECT person FROM groupmembership JOIN groups " +
-                        "ON (group_id=groups._id OR " +
-                        "(group_sync_id = groups._sync_id AND " +
-                            "group_sync_account = groups._sync_account)) "+
-                        "WHERE " + Groups.NAME + "="
-                        + DatabaseUtils.sqlEscapeString(url.getLastPathSegment()) + ")");
+                qb.appendWhere(buildGroupNameMatchWhereClause(url.getLastPathSegment()));
                 break;
 
             default:
@@ -1262,6 +1260,40 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             c.setNotificationUri(getContext().getContentResolver(), notificationUri);
         }
         return c;
+    }
+
+
+    /**
+     * Build a WHERE clause that restricts the query to match people that are a member of
+     * a particular system group.  The projection map of the query must include {@link People#_ID}.
+     *
+     * @param groupSystemId The system group id (e.g {@link Groups#GROUP_MY_CONTACTS})
+     * @return The where clause.
+     */
+    private CharSequence buildGroupSystemIdMatchWhereClause(String groupSystemId) {
+        return "people._id IN (SELECT person FROM groupmembership JOIN groups " +
+                "ON (group_id=groups._id OR " +
+                "(group_sync_id = groups._sync_id AND " +
+                    "group_sync_account = groups._sync_account)) "+
+                "WHERE " + Groups.SYSTEM_ID + "="
+                + DatabaseUtils.sqlEscapeString(groupSystemId) + ")";
+    }
+
+    /**
+     * Build a WHERE clause that restricts the query to match people that are a member of
+     * a group with a particular name. The projection map of the query must include
+     * {@link People#_ID}.
+     *
+     * @param groupName The name of the group
+     * @return The where clause.
+     */
+    private CharSequence buildGroupNameMatchWhereClause(String groupName) {
+        return "people._id IN (SELECT person FROM groupmembership JOIN groups " +
+                "ON (group_id=groups._id OR " +
+                "(group_sync_id = groups._sync_id AND " +
+                    "group_sync_account = groups._sync_account)) "+
+                "WHERE " + Groups.NAME + "="
+                + DatabaseUtils.sqlEscapeString(groupName) + ")";
     }
 
     private Cursor queryOwner(String[] projection) {
@@ -1307,17 +1339,28 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
      * @return null with qb configured for a query, a cursor with the results already in it.
      */
     private Cursor handleSearchSuggestionsQuery(Uri url, SQLiteQueryBuilder qb) {
-        qb.setTables("people");
+        qb.setTables(PEOPLE_PHONES_PHOTOS_ORGANIZATIONS_JOIN);
         qb.setProjectionMap(sSearchSuggestionsProjectionMap);
         if (url.getPathSegments().size() > 1) {
             // A search term was entered, use it to filter
+
+            // only match within 'my contacts'
+            // TODO: match the 'display group' instead of hard coding 'my contacts'
+            // once that information is factored out of the shared prefs of the contacts
+            // app into this content provider.
+            qb.appendWhere(buildGroupSystemIdMatchWhereClause(Groups.GROUP_MY_CONTACTS));
+            qb.appendWhere(" AND ");            
+
+            // match the query
             final String searchClause = url.getLastPathSegment();
             if (!TextUtils.isDigitsOnly(searchClause)) {
                 qb.appendWhere(buildPeopleLookupWhereClause(searchClause));
             } else {
                 final String[] columnNames = new String[] {
+                        "_id",
                         SearchManager.SUGGEST_COLUMN_TEXT_1,
                         SearchManager.SUGGEST_COLUMN_TEXT_2,
+                        SearchManager.SUGGEST_COLUMN_ICON_1,
                         SearchManager.SUGGEST_COLUMN_INTENT_DATA,
                         SearchManager.SUGGEST_COLUMN_INTENT_ACTION,
                 };
@@ -1326,7 +1369,8 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                 String s;
                 int i;
 
-                ArrayList dialNumber = new ArrayList();
+                ArrayList<Object> dialNumber = new ArrayList<Object>();
+                dialNumber.add(0);  // _id
                 s = r.getString(com.android.internal.R.string.dial_number_using, searchClause);
                 i = s.indexOf('\n');
                 if (i < 0) {
@@ -1336,10 +1380,12 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                     dialNumber.add(s.substring(0, i));
                     dialNumber.add(s.substring(i + 1));
                 }
+                dialNumber.add(String.valueOf(android.R.drawable.sym_action_call));
                 dialNumber.add("tel:" + searchClause);
                 dialNumber.add(Intents.SEARCH_SUGGESTION_DIAL_NUMBER_CLICKED);  
 
-                ArrayList createContact = new ArrayList();
+                ArrayList<Object> createContact = new ArrayList<Object>();
+                createContact.add(1);  // _id
                 s = r.getString(com.android.internal.R.string.create_contact_using, searchClause);
                 i = s.indexOf('\n');
                 if (i < 0) {
@@ -1349,6 +1395,8 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                     createContact.add(s.substring(0, i));
                     createContact.add(s.substring(i + 1));
                 }
+                // TODO: add a "create contact" icon
+                createContact.add(String.valueOf(android.R.drawable.ic_menu_add));
                 createContact.add("tel:" + searchClause);
                 createContact.add(Intents.SEARCH_SUGGESTION_CREATE_CONTACT_CLICKED);
 
@@ -1393,6 +1441,12 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             case PHONES_FILTER_NAME:
             case PHONES_MOBILE_FILTER_NAME:
                 return "vnd.android.cursor.dir/phone";
+            case PHOTOS_ID:
+                return "vnd.android.cursor.item/photo";
+            case PHOTOS:
+                return "vnd.android.cursor.dir/photo";
+            case PEOPLE_PHOTO:
+                return "vnd.android.cursor.item/photo";
             case CONTACTMETHODS:
                 return "vnd.android.cursor.dir/contact-methods";
             case CONTACTMETHODS_ID:
@@ -1410,6 +1464,10 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                 return "vnd.android.cursor.item/organization";
             case CALLS_FILTER:
                 return "vnd.android.cursor.dir/calls";
+            case SEARCH_SUGGESTIONS:
+                return SearchManager.SUGGEST_MIME_TYPE;
+            case SEARCH_SHORTCUT:
+                return SearchManager.SHORTCUT_MIME_TYPE;
             default:
                 throw new IllegalArgumentException("Unknown URL");
         }
@@ -3775,6 +3833,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
 
     private static final int VOICE_DIALER_TIMESTAMP = 7000;
     private static final int SEARCH_SUGGESTIONS = 7001;
+    private static final int SEARCH_SHORTCUT = 7002;
 
     private static final int GROUPS_BASE = 8000;
     private static final int GROUPS = GROUPS_BASE;
@@ -3875,6 +3934,59 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             + "END"
         + ")";
     
+    private static final String PRIMARY_ORGANIZATION_WHEN_SQL
+            = " WHEN primary_organization is NOT NULL THEN "
+            + "(SELECT company FROM organizations WHERE organizations._id = primary_organization)";
+
+    private static final String PRIMARY_PHONE_WHEN_SQL
+            = " WHEN primary_phone IS NOT NULL THEN "
+            + "(SELECT number FROM phones WHERE phones._id = primary_phone)";
+
+    private static final String PRIMARY_EMAIL_WHEN_SQL
+            = " WHEN primary_email IS NOT NULL THEN "
+            + "(SELECT data FROM contact_methods WHERE contact_methods._id = primary_email)";
+
+    // The outer CASE is for figuring out what info DISPLAY_NAME_SQL returned.
+    // We then pick the next piece of info, to avoid the two lines in the search 
+    // suggestion being identical.
+    private static final String SUGGEST_DESCRIPTION_SQL
+            = "(CASE"
+                // DISPLAY_NAME_SQL returns name, try org, phone, email
+                + " WHEN (name IS NOT NULL AND name != '') THEN "
+                    + "(CASE"
+                        + PRIMARY_ORGANIZATION_WHEN_SQL
+                        + PRIMARY_PHONE_WHEN_SQL
+                        + PRIMARY_EMAIL_WHEN_SQL
+                        + " ELSE null END)"
+                // DISPLAY_NAME_SQL returns org, try phone, email
+                + " WHEN primary_organization is NOT NULL THEN "
+                    + "(CASE"
+                        + PRIMARY_PHONE_WHEN_SQL
+                        + PRIMARY_EMAIL_WHEN_SQL
+                        + " ELSE null END)"
+                // DISPLAY_NAME_SQL returns phone, try email
+                + " WHEN primary_phone IS NOT NULL THEN "
+                    + "(CASE"
+                        + PRIMARY_EMAIL_WHEN_SQL
+                        + " ELSE null END)"
+                // DISPLAY_NAME_SQL returns email or NULL, return NULL
+                + " ELSE null END)";
+
+    private static final String PRESENCE_ICON_SQL
+            = "(CASE"
+                + buildPresenceStatusWhen(People.OFFLINE)
+                + buildPresenceStatusWhen(People.INVISIBLE)
+                + buildPresenceStatusWhen(People.AWAY)
+                + buildPresenceStatusWhen(People.IDLE)
+                + buildPresenceStatusWhen(People.DO_NOT_DISTURB)
+                + buildPresenceStatusWhen(People.AVAILABLE)
+                + " ELSE null END)";
+
+    private static String buildPresenceStatusWhen(int status) {
+        return " WHEN " + Presence.PRESENCE_STATUS + " = " + status
+            + " THEN " + Presence.getPresenceIconResourceId(status);
+    }
+
     private static final String[] sPhonesKeyColumns;
     private static final String[] sContactMethodsKeyColumns;
     private static final String[] sOrganizationsKeyColumns;
@@ -3966,6 +4078,8 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                 SEARCH_SUGGESTIONS);
         matcher.addURI(CONTACTS_AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY + "/*",
                 SEARCH_SUGGESTIONS);
+        matcher.addURI(CONTACTS_AUTHORITY, SearchManager.SUGGEST_URI_PATH_SHORTCUT + "/#",
+                SEARCH_SHORTCUT);
         matcher.addURI(CONTACTS_AUTHORITY, "settings", SETTINGS);
 
         matcher.addURI(CONTACTS_AUTHORITY, "live_folders/people", LIVE_FOLDERS_PEOPLE);
@@ -4160,9 +4274,20 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         map = new HashMap<String, String>();
         map.put(SearchManager.SUGGEST_COLUMN_TEXT_1,
                 DISPLAY_NAME_SQL + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1);
+        map.put(SearchManager.SUGGEST_COLUMN_TEXT_2,
+                SUGGEST_DESCRIPTION_SQL + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_2);
+        map.put(SearchManager.SUGGEST_COLUMN_ICON_1,
+                com.android.internal.R.drawable.ic_contact_picture
+                + " AS " + SearchManager.SUGGEST_COLUMN_ICON_1);
+        map.put(SearchManager.SUGGEST_COLUMN_ICON_1_BITMAP,
+                Photos.DATA + " AS " + SearchManager.SUGGEST_COLUMN_ICON_1_BITMAP);
+        map.put(SearchManager.SUGGEST_COLUMN_ICON_2,
+                PRESENCE_ICON_SQL + " AS " + SearchManager.SUGGEST_COLUMN_ICON_2);
         map.put(SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID,
-                People._ID + " AS " + SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID);
-        map.put(People._ID, People._ID);
+                "people._id AS " + SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID);
+        map.put(SearchManager.SUGGEST_COLUMN_SHORTCUT_ID,
+                "people._id AS " + SearchManager.SUGGEST_COLUMN_SHORTCUT_ID);
+        map.put(People._ID, "people._id AS " + People._ID);
         sSearchSuggestionsProjectionMap = map;
 
         // Photos projection map
