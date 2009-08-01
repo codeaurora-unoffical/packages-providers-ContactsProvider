@@ -26,11 +26,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.UriMatcher;
+import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.DatabaseUtils;
 import android.database.SQLException;
+import android.database.sqlite.SQLiteContentHelper;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDoneException;
@@ -39,10 +41,13 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.MemoryFile;
 import android.os.ParcelFileDescriptor;
 import android.provider.CallLog;
-import android.provider.CallLog.Calls;
 import android.provider.Contacts;
+import android.provider.LiveFolders;
+import android.provider.SyncConstValue;
+import android.provider.CallLog.Calls;
 import android.provider.Contacts.ContactMethods;
 import android.provider.Contacts.Extensions;
 import android.provider.Contacts.GroupMembership;
@@ -56,21 +61,22 @@ import android.provider.Contacts.Phones;
 import android.provider.Contacts.Photos;
 import android.provider.Contacts.Presence;
 import android.provider.Contacts.PresenceColumns;
-import android.provider.LiveFolders;
-import android.provider.SyncConstValue;
 import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 import android.util.Config;
 import android.util.Log;
 
-import com.android.internal.database.ArrayListCursor;
 import com.google.android.collect.Maps;
 import com.google.android.collect.Sets;
 
+import com.android.internal.database.ArrayListCursor;
+
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -174,8 +180,28 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
     private int mIndexPhonesNumberKey;
     private int mIndexPhonesIsPrimary;
 
+    private static HashMap<String, String> mSearchSuggestionsProjectionMap;
+    private static String mSearchSuggestionLanguage;
+    
     public ContactsProvider() {
         super(DATABASE_NAME, DATABASE_VERSION, Contacts.CONTENT_URI);
+        mSearchSuggestionLanguage = Locale.getDefault().getLanguage();
+        // Search suggestions projection map
+        mSearchSuggestionsProjectionMap = new HashMap<String, String>();
+        updateSuggestColumnTexts();
+        mSearchSuggestionsProjectionMap.put(SearchManager.SUGGEST_COLUMN_ICON_1,
+                "(CASE WHEN " + Photos.DATA + " IS NOT NULL"
+                + " THEN '" + People.CONTENT_URI + "/' || people._id ||"
+                        + " '/" + Photos.CONTENT_DIRECTORY + "/data'"
+                + " ELSE " + com.android.internal.R.drawable.ic_contact_picture
+                + " END) AS " + SearchManager.SUGGEST_COLUMN_ICON_1);
+        mSearchSuggestionsProjectionMap.put(SearchManager.SUGGEST_COLUMN_ICON_2,
+                PRESENCE_ICON_SQL + " AS " + SearchManager.SUGGEST_COLUMN_ICON_2);
+        mSearchSuggestionsProjectionMap.put(SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID,
+                "people._id AS " + SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID);
+        mSearchSuggestionsProjectionMap.put(SearchManager.SUGGEST_COLUMN_SHORTCUT_ID,
+                "people._id AS " + SearchManager.SUGGEST_COLUMN_SHORTCUT_ID);
+        mSearchSuggestionsProjectionMap.put(People._ID, "people._id AS " + People._ID);
     }
 
     @Override
@@ -281,9 +307,23 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             // use new token format from 73
             db.execSQL("delete from peopleLookup");
             try {
-                DatabaseUtils.longForQuery(db,
-                        "SELECT _TOKENIZE('peopleLookup', _id, name, ' ') from people;",
-                        null);
+                // With longForQuery(), _TOKERNIZE() is called just once, toward the first entry
+                // in "people" table. This may be a bug. Instead, we use rawQuery() for now. 
+                // DatabaseUtils.longForQuery(db, query, null);
+
+                // Cursors objects are lazily executed. So we have to call some method which forces
+                // the cursor to run the query.
+                Cursor cursor =
+                    db.rawQuery("SELECT _TOKENIZE('peopleLookup', _id, name, ' ') from people",
+                            null);
+                try {
+                    int rows = cursor.getCount();
+                    Log.i(TAG, "Processed " + rows + " contacts.");
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                }
             } catch (SQLiteDoneException ex) {
                 // it is ok to throw this, 
                 // it just means you don't have data in people table
@@ -345,12 +385,61 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             oldVersion = 80;
         }
 
+        // Because of historical reason, version 81 have two types.
+        // 1) One type already has "peopleLookupWithPhoneticName" table but does not have
+        // "peopleLookup" table with token_index.
+        // 2) Another type has "peopleLookup" table with token_index but does not have
+        // "peopleLookupWithPhoneticName" table.
+        // For simplicity, both databases are once dropped here.
+        // This is slow but should be done just once anyway...
+        if (oldVersion == 80 || oldVersion == 81) {
+            Log.i(TAG, "Upgrading contacts database from version " + oldVersion + " to " +
+                    newVersion + ", which will preserve existing data");
+
+            recreatePeopleLookupTable(db);
+            try {
+                String query = "SELECT _TOKENIZE('peopleLookup', _id, name, ' ', 1) FROM people";
+                Cursor cursor = db.rawQuery(query, null);
+                try {
+                    int rows = cursor.getCount();
+                    Log.i(TAG, "Processed " + rows + " contacts.");
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                }
+            } catch (SQLiteException e) {
+                Log.e(TAG, e.toString() + ": " + e.getMessage());
+            }
+            
+            recreatePeopleLookupWithPhoneticNameTable(db);
+            try {
+                String query = "SELECT _TOKENIZE('peopleLookupWithPhoneticName', _id, "
+                    + PHONETIC_LOOKUP_SQL_SIMPLE +
+                    ", ' ', 1) FROM people";
+                Cursor cursor = db.rawQuery(query, null);
+                try {
+                    int rows = cursor.getCount();
+                    Log.i(TAG, "Processed " + rows + " contacts.");
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                }
+            } catch (SQLiteException e) {
+                Log.e(TAG, e.toString() + ": " + e.getMessage());
+            }
+            
+            oldVersion = 82;
+        }
+
         return upgradeWasLossless;
     }
 
     protected void dropTables(SQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS people");
         db.execSQL("DROP TABLE IF EXISTS peopleLookup");
+        db.execSQL("DROP TABLE IF EXISTS peopleLookupWithPhoneticName");
         db.execSQL("DROP TABLE IF EXISTS _deleted_people");
         db.execSQL("DROP TABLE IF EXISTS phones");
         db.execSQL("DROP TABLE IF EXISTS contact_methods");
@@ -365,6 +454,68 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         db.execSQL("DROP TABLE IF EXISTS settings");
     }
 
+    private void recreatePeopleLookupTable(SQLiteDatabase db) {
+        db.execSQL("DROP TABLE IF EXISTS peopleLookup");
+        db.execSQL("DROP INDEX IF EXISTS peopleLookupIndex");
+        db.execSQL("DROP TRIGGER IF EXISTS peopleLookup_update"); 
+        db.execSQL("DROP TRIGGER IF EXISTS peopleLookup_insert");
+
+        db.execSQL("CREATE TABLE peopleLookup (" +
+                "token TEXT," +
+                "source INTEGER REFERENCES people(_id)," +
+                "token_index INTEGER" +
+                ");");
+        db.execSQL("CREATE INDEX peopleLookupIndex ON peopleLookup (" +
+                "token," +
+                "source" +
+                ");");
+        
+        // Triggers to keep the peopleLookup table up to date
+        db.execSQL("CREATE TRIGGER peopleLookup_update UPDATE OF name ON people " +
+                    "BEGIN " +
+                        "DELETE FROM peopleLookup WHERE source = new._id;" +
+                        "SELECT _TOKENIZE('peopleLookup', new._id, new.name, ' ', 1);" +
+                    "END");
+        db.execSQL("CREATE TRIGGER peopleLookup_insert AFTER INSERT ON people " +
+                    "BEGIN " +
+                        "SELECT _TOKENIZE('peopleLookup', new._id, new.name, ' ', 1);" +
+                    "END");
+    }
+    
+    private void recreatePeopleLookupWithPhoneticNameTable(SQLiteDatabase db) {
+        db.execSQL("DROP TABLE IF EXISTS peopleLookupWithPhoneticName");
+        db.execSQL("DROP INDEX IF EXISTS peopleLookupwithPhoneticNameIndex");
+        db.execSQL("DROP TRIGGER IF EXISTS peopleLookupWithPhoneticName_update");
+        db.execSQL("DROP TRIGGER IF EXISTS peopleLookupWithPhoneticName_insert");
+
+        db.execSQL("CREATE TABLE peopleLookupWithPhoneticName (" +
+                "token TEXT," +
+                "source INTEGER REFERENCES people(_id)," +
+                "token_index INTEGER" +
+                ");");
+        db.execSQL("CREATE INDEX peopleLookupWithPhoneticNameIndex ON " +
+                "peopleLookupWithPhoneticName (" +
+                "token," +
+                "source" +
+                ");");
+
+        // Triggers to keep the peopleLookupWithPhoneticName table up to date
+        db.execSQL("CREATE TRIGGER peopleLookupWithPhoneticName_update UPDATE OF " +
+                    "name, phonetic_name ON people " +
+                    "BEGIN " +
+                        "DELETE FROM peopleLookupWithPhoneticName WHERE source = new._id;" +
+                        "SELECT _TOKENIZE('peopleLookupWithPhoneticName', new._id, " +
+                        PHONETIC_LOOKUP_SQL_SIMPLE_WITH_NEW +
+                        ", ' ', 1);" +
+                    "END");
+        db.execSQL("CREATE TRIGGER peopleLookupWithPhoneticName_insert AFTER INSERT ON people " +
+                    "BEGIN " +
+                        "SELECT _TOKENIZE('peopleLookupWithPhoneticName', new._id, " +
+                        PHONETIC_LOOKUP_SQL_SIMPLE_WITH_NEW +
+                        ", ' ', 1);" +
+                    "END");
+    }
+    
     @Override
     protected void bootstrapDatabase(SQLiteDatabase db) {
         super.bootstrapDatabase(db);
@@ -436,7 +587,8 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
 
         db.execSQL("CREATE TABLE peopleLookup (" +
                     "token TEXT," +
-                    "source INTEGER REFERENCES people(_id)" +
+                    "source INTEGER REFERENCES people(_id)," +
+                    "token_index INTEGER"+
                     ");");
         db.execSQL("CREATE INDEX peopleLookupIndex ON peopleLookup (" +
                     "token," +
@@ -571,6 +723,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         db.execSQL("CREATE TRIGGER contact_cleanup DELETE ON people " +
                     "BEGIN " +
                         "DELETE FROM peopleLookup WHERE source = old._id;" +
+                        "DELETE FROM peopleLookupWithPhoneticName WHERE source = old._id;" +
                         "DELETE FROM phones WHERE person = old._id;" +
                         "DELETE FROM contact_methods WHERE person = old._id;" +
                         "DELETE FROM organizations WHERE person = old._id;" +
@@ -595,17 +748,9 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                             "old._sync_version);" +
                     "END");
 
-        // Triggers to keep the peopleLookup table up to date
-        db.execSQL("CREATE TRIGGER peopleLookup_update UPDATE OF name ON people " +
-                    "BEGIN " +
-                        "DELETE FROM peopleLookup WHERE source = new._id;" +
-                        "SELECT _TOKENIZE('peopleLookup', new._id, new.name, ' ');" +
-                    "END");
-        db.execSQL("CREATE TRIGGER peopleLookup_insert AFTER INSERT ON people " +
-                    "BEGIN " +
-                        "SELECT _TOKENIZE('peopleLookup', new._id, new.name, ' ');" +
-                    "END");
-
+        recreatePeopleLookupTable(db);
+        recreatePeopleLookupWithPhoneticNameTable(db);
+        
         // Triggers to set the _sync_dirty flag when a phone is changed,
         // inserted or deleted
         db.execSQL("CREATE TRIGGER phones_update UPDATE ON phones " +
@@ -742,10 +887,10 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                 + Presence.PERSON_ID + ");");
     }
 
-    @SuppressWarnings("deprecation")
-    private String buildPeopleLookupWhereClause(String filterParam) {
-        StringBuilder filter = new StringBuilder(
-                "people._id IN (SELECT source FROM peopleLookup WHERE token GLOB ");
+    private String buildPeopleLookupWhereClauseCommon(String filterParam, String tableName) {
+        StringBuilder filter = new StringBuilder("people._id IN (SELECT source FROM ");
+        filter.append(tableName);
+        filter.append(" WHERE token GLOB ");
         // NOTE: Query parameters won't work here since the SQL compiler
         // needs to parse the actual string to know that it can use the
         // index to do a prefix scan.
@@ -754,13 +899,25 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         filter.append(')');
         return filter.toString();
     }
+    
+    private String buildPeopleLookupWhereClause(String filterParam) {
+        return buildPeopleLookupWhereClauseCommon(filterParam, "peopleLookup");
+    }
 
+    private String buildPeopleLookupWhereClauseForSuggestion(String filterParam) {
+        return buildPeopleLookupWhereClauseCommon(filterParam,
+                usePhoneticNameForPeopleLookup()
+                        ? "peopleLookupWithPhoneticName"
+                        : "peopleLookup");
+    }
+    
     @Override
     public Cursor queryInternal(Uri url, String[] projectionIn,
             String selection, String[] selectionArgs, String sort) {
 
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
         Uri notificationUri = Contacts.CONTENT_URI;
+        String limit = getLimit(url);
         StringBuilder whereClause;
         String groupBy = null;
 
@@ -922,7 +1079,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             }
             case SEARCH_SHORTCUT: {
                 qb.setTables(PEOPLE_PHONES_PHOTOS_ORGANIZATIONS_JOIN);
-                qb.setProjectionMap(sSearchSuggestionsProjectionMap);
+                qb.setProjectionMap(getCurrentSearchSuggestionsProjectionMap());
                 qb.appendWhere(SearchManager.SUGGEST_COLUMN_SHORTCUT_ID + "=");
                 qb.appendWhere(url.getPathSegments().get(1));
                 break;
@@ -1255,13 +1412,37 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         // run the query
         final SQLiteDatabase db = getDatabase();
         Cursor c = qb.query(db, projectionIn, selection, selectionArgs,
-                groupBy, null, sort);
+                groupBy, null, sort, limit);
         if ((c != null) && !isTemporary()) {
             c.setNotificationUri(getContext().getContentResolver(), notificationUri);
         }
         return c;
     }
 
+    /**
+     * Gets the value of the "limit" URI query parameter.
+     *
+     * @return A string containing a non-negative integer, or <code>null</code> if
+     *         the parameter is not set, or is set to an invalid value.
+     */
+    private String getLimit(Uri url) {
+        String limit = url.getQueryParameter("limit");
+        if (limit == null) {
+            return null;
+        }
+        // make sure that the limit is a non-negative integer
+        try {
+            int l = Integer.parseInt(limit);
+            if (l < 0) {
+                Log.w(TAG, "Invalid limit parameter: " + limit);
+                return null;
+            }
+            return String.valueOf(l);
+        } catch (NumberFormatException ex) {
+            Log.w(TAG, "Invalid limit parameter: " + limit);
+            return null;
+        }
+    }
 
     /**
      * Build a WHERE clause that restricts the query to match people that are a member of
@@ -1330,6 +1511,17 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         }
     }
 
+    private HashMap<String, String> getCurrentSearchSuggestionsProjectionMap() {
+        String currentLanguage = Locale.getDefault().getLanguage();
+        synchronized (this) {
+            if (!currentLanguage.equals(mSearchSuggestionLanguage)) {
+                mSearchSuggestionLanguage = currentLanguage;
+                updateSuggestColumnTexts();
+            }
+        }
+        return mSearchSuggestionsProjectionMap; 
+    }
+    
     /**
      * Either sets up the query builder so we can run the proper query against the database
      * and returns null, or returns a cursor with the results already in it.
@@ -1340,7 +1532,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
      */
     private Cursor handleSearchSuggestionsQuery(Uri url, SQLiteQueryBuilder qb) {
         qb.setTables(PEOPLE_PHONES_PHOTOS_ORGANIZATIONS_JOIN);
-        qb.setProjectionMap(sSearchSuggestionsProjectionMap);
+        qb.setProjectionMap(getCurrentSearchSuggestionsProjectionMap());
         if (url.getPathSegments().size() > 1) {
             // A search term was entered, use it to filter
 
@@ -1354,7 +1546,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             // match the query
             final String searchClause = url.getLastPathSegment();
             if (!TextUtils.isDigitsOnly(searchClause)) {
-                qb.appendWhere(buildPeopleLookupWhereClause(searchClause));
+                qb.appendWhere(buildPeopleLookupWhereClauseForSuggestion(searchClause));
             } else {
                 final String[] columnNames = new String[] {
                         "_id",
@@ -1363,6 +1555,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                         SearchManager.SUGGEST_COLUMN_ICON_1,
                         SearchManager.SUGGEST_COLUMN_INTENT_DATA,
                         SearchManager.SUGGEST_COLUMN_INTENT_ACTION,
+                        SearchManager.SUGGEST_COLUMN_SHORTCUT_ID,
                 };
 
                 Resources r = getContext().getResources();
@@ -1380,9 +1573,10 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                     dialNumber.add(s.substring(0, i));
                     dialNumber.add(s.substring(i + 1));
                 }
-                dialNumber.add(String.valueOf(android.R.drawable.sym_action_call));
+                dialNumber.add(String.valueOf(com.android.internal.R.drawable.call_contact));
                 dialNumber.add("tel:" + searchClause);
                 dialNumber.add(Intents.SEARCH_SUGGESTION_DIAL_NUMBER_CLICKED);  
+                dialNumber.add(null);
 
                 ArrayList<Object> createContact = new ArrayList<Object>();
                 createContact.add(1);  // _id
@@ -1395,10 +1589,10 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                     createContact.add(s.substring(0, i));
                     createContact.add(s.substring(i + 1));
                 }
-                // TODO: add a "create contact" icon
-                createContact.add(String.valueOf(android.R.drawable.ic_menu_add));
+                createContact.add(String.valueOf(com.android.internal.R.drawable.create_contact));
                 createContact.add("tel:" + searchClause);
                 createContact.add(Intents.SEARCH_SUGGESTION_CREATE_CONTACT_CLICKED);
+                createContact.add(SearchManager.SUGGEST_NEVER_MAKE_SHORTCUT);
 
                 ArrayList<ArrayList> rows = new ArrayList<ArrayList>();
                 rows.add(dialNumber);
@@ -1447,6 +1641,8 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                 return "vnd.android.cursor.dir/photo";
             case PEOPLE_PHOTO:
                 return "vnd.android.cursor.item/photo";
+            case PEOPLE_PHOTO_DATA:
+                return "image/png";
             case CONTACTMETHODS:
                 return "vnd.android.cursor.dir/contact-methods";
             case CONTACTMETHODS_ID:
@@ -2090,6 +2286,25 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         }
 
         return count;
+    }
+
+    @Override
+    public AssetFileDescriptor openAssetFile(Uri uri, String mode) throws FileNotFoundException {
+        int match = sURIMatcher.match(uri);
+        switch (match) {
+            case PEOPLE_PHOTO_DATA:
+                if (!"r".equals(mode)) {
+                    throw new FileNotFoundException("Mode " + mode + " not supported.");
+                }
+                String person = uri.getPathSegments().get(1);
+                String sql = "SELECT " + Photos.DATA + " FROM " + sPhotosTable
+                        + " WHERE " + Photos.PERSON_ID + "=?";
+                String[] selectionArgs = { person };
+                return SQLiteContentHelper.getBlobColumnAsAssetFile(getDatabase(), sql,
+                        selectionArgs);
+            default:
+                throw new FileNotFoundException("No file at: " + uri);
+        }
     }
 
     @Override
@@ -3769,7 +3984,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
     private static final String TAG = "ContactsProvider";
 
     /* package private */ static final String DATABASE_NAME = "contacts.db";
-    /* package private */ static final int DATABASE_VERSION = 80;
+    /* package private */ static final int DATABASE_VERSION = 82;
 
     protected static final String CONTACTS_AUTHORITY = "contacts";
     protected static final String CALL_LOG_AUTHORITY = "call_log";
@@ -3798,6 +4013,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
     private static final int PEOPLE_UPDATE_CONTACT_TIME = PEOPLE_BASE + 20;
     private static final int PEOPLE_PHONES_WITH_PRESENCE = PEOPLE_BASE + 21;
     private static final int PEOPLE_WITH_EMAIL_OR_IM_FILTER = PEOPLE_BASE + 22;
+    private static final int PEOPLE_PHOTO_DATA = PEOPLE_BASE + 23;
 
     private static final int DELETED_BASE = 1000;
     private static final int DELETED_PEOPLE = DELETED_BASE;
@@ -3880,7 +4096,6 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
     private static final HashMap<String, String> sPresenceProjectionMap;
     private static final HashMap<String, String> sEmailSearchProjectionMap;
     private static final HashMap<String, String> sOrganizationsProjectionMap;
-    private static final HashMap<String, String> sSearchSuggestionsProjectionMap;
     private static final HashMap<String, String> sGroupMembershipProjectionMap;
     private static final HashMap<String, String> sPhotosProjectionMap;
     private static final HashMap<String, String> sExtensionsProjectionMap;
@@ -3917,7 +4132,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             + "CASE WHEN (phonetic_name IS NOT NULL AND phonetic_name != '') "
                 + "THEN phonetic_name "
             + "ELSE "
-                + "(CASE WHEN (name is NOT NULL AND name != '')"
+                + "(CASE WHEN (name is NOT NULL AND name != '') "
                     + "THEN name "
                 + "ELSE "
                     + "(CASE WHEN primary_email IS NOT NULL THEN "
@@ -3933,6 +4148,9 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
                 + "END) "
             + "END"
         + ")";
+    
+    private static final String NAME_WHEN_SQL
+            = " WHEN name is NOT NULL ANd name != '' THEN name";
     
     private static final String PRIMARY_ORGANIZATION_WHEN_SQL
             = " WHEN primary_organization is NOT NULL THEN "
@@ -3987,6 +4205,92 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
             + " THEN " + Presence.getPresenceIconResourceId(status);
     }
 
+
+    // This is similar to DISPLAY_NAME_SQL. Only difference is that this prioritize
+    // phonetic_name.
+    private static final String PHONETIC_LOOKUP_STRING_SQL = 
+        "GET_NORMALIZED_STRING("
+            + "CASE WHEN (phonetic_name IS NOT NULL AND phonetic_name != '') " 
+                + "THEN phonetic_name "
+            + "ELSE "
+                + "(CASE WHEN (name is NOT NULL AND name != '') "
+                    + "THEN name "
+                + "ELSE "
+                    + "(CASE WHEN primary_organization is NOT NULL THEN "
+                        + "(SELECT company FROM organizations WHERE "
+                            + "organizations._id = primary_organization) "
+                    + "ELSE "
+                        + "(CASE WHEN primary_phone IS NOT NULL THEN "
+                            +"(SELECT number FROM phones WHERE phones._id = primary_phone) "
+                        + "ELSE "
+                            + "(CASE WHEN primary_email IS NOT NULL THEN "
+                                + "(SELECT data FROM contact_methods WHERE "
+                                    + "contact_methods._id = primary_email) "
+                            + "ELSE "
+                                + "null "
+                            + "END) "
+                        + "END) "
+                    + "END) "
+                + "END) "
+            + "END)";
+
+    private static final String PHONETIC_SUGGEST_DESCRIPTION_SQL =
+        "(CASE"
+            + " WHEN (phonetic_name IS NOT NULL AND phonetic_name != '') THEN "
+            // PHONETIC_LOOKUP_STRING_SQL returns phonetic_name. try name, org, phone, email
+                + "(CASE"
+                    + NAME_WHEN_SQL
+                    + PRIMARY_ORGANIZATION_WHEN_SQL
+                    + PRIMARY_PHONE_WHEN_SQL
+                    + PRIMARY_EMAIL_WHEN_SQL
+                    + " ELSE null END)"
+            // PHONETIC_LOOKUP_STRING_SQL returns name, try org, phone, email
+            + " WHEN (name IS NOT NULL AND name != '') THEN "
+                + "(CASE"
+                    + PRIMARY_ORGANIZATION_WHEN_SQL
+                    + PRIMARY_PHONE_WHEN_SQL
+                    + PRIMARY_EMAIL_WHEN_SQL
+                    + " ELSE null END)"
+            // PHONETIC_LOOKUP_STRING_SQL returns org, try phone, email
+            + " WHEN primary_organization is NOT NULL THEN "
+                + "(CASE"
+                    + PRIMARY_PHONE_WHEN_SQL
+                    + PRIMARY_EMAIL_WHEN_SQL
+                    + " ELSE null END)"
+            // PHONETIC_LOOKUP_STRING_SQL returns phone, try email
+            + " WHEN primary_phone IS NOT NULL THEN "
+                + "(CASE"
+                    + PRIMARY_EMAIL_WHEN_SQL
+                    + " ELSE null END)"
+            // PHONETIC_LOOKUP_STRING_SQL returns email or NULL, return NULL
+        + " ELSE null END)";
+    
+    // "primary_organization" etc. are not considered here, since peopleLookup does not
+    // consider them either.
+    private static final String PHONETIC_LOOKUP_SQL_SIMPLE =
+        "GET_NORMALIZED_STRING("
+            + "CASE WHEN (phonetic_name IS NOT NULL AND phonetic_name != '') "
+                + "THEN phonetic_name "
+            + "ELSE "
+                + "(CASE WHEN (name is NOT NULL AND name != '') "
+                    + "THEN name "
+                + "ELSE "
+                    + "'' "
+                + "END) "
+            + "END)";
+    
+    private static final String PHONETIC_LOOKUP_SQL_SIMPLE_WITH_NEW =
+        "GET_NORMALIZED_STRING("
+            + "CASE WHEN (new.phonetic_name IS NOT NULL AND new.phonetic_name != '') "
+                + "THEN new.phonetic_name "
+            + "ELSE "
+                + "(CASE WHEN (new.name is NOT NULL AND new.name != '') "
+                    + "THEN new.name "
+                + "ELSE "
+                    + "'' "
+                + "END) "
+            + "END)";
+    
     private static final String[] sPhonesKeyColumns;
     private static final String[] sContactMethodsKeyColumns;
     private static final String[] sOrganizationsKeyColumns;
@@ -4008,6 +4312,28 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         return (sb == null) ? "" : sb.toString();
     }
 
+    /**
+     * @return true when phonetic_name should be considered when looking up people's names.
+     */
+    private synchronized boolean usePhoneticNameForPeopleLookup() {
+        return mSearchSuggestionLanguage.equals(Locale.JAPAN.getLanguage());
+    }
+    
+    private void updateSuggestColumnTexts() {
+        if (usePhoneticNameForPeopleLookup()) {
+            mSearchSuggestionsProjectionMap.put(SearchManager.SUGGEST_COLUMN_TEXT_1,
+                    PHONETIC_LOOKUP_STRING_SQL + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1);
+            mSearchSuggestionsProjectionMap.put(SearchManager.SUGGEST_COLUMN_TEXT_2,
+                    PHONETIC_SUGGEST_DESCRIPTION_SQL + " AS " + 
+                    SearchManager.SUGGEST_COLUMN_TEXT_2);
+        } else {
+            mSearchSuggestionsProjectionMap.put(SearchManager.SUGGEST_COLUMN_TEXT_1,
+                    DISPLAY_NAME_SQL + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1);
+            mSearchSuggestionsProjectionMap.put(SearchManager.SUGGEST_COLUMN_TEXT_2,
+                    SUGGEST_DESCRIPTION_SQL + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_2);
+        }
+    }
+    
     static {
         // Contacts URI matching table
         UriMatcher matcher = sURIMatcher;
@@ -4039,6 +4365,7 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         matcher.addURI(CONTACTS_AUTHORITY, "people/#/phones_with_presence",
                 PEOPLE_PHONES_WITH_PRESENCE);
         matcher.addURI(CONTACTS_AUTHORITY, "people/#/photo", PEOPLE_PHOTO);
+        matcher.addURI(CONTACTS_AUTHORITY, "people/#/photo/data", PEOPLE_PHOTO_DATA);
         matcher.addURI(CONTACTS_AUTHORITY, "people/#/phones/#", PEOPLE_PHONES_ID);
         matcher.addURI(CONTACTS_AUTHORITY, "people/#/contact_methods", PEOPLE_CONTACTMETHODS);
         matcher.addURI(CONTACTS_AUTHORITY, "people/#/contact_methods_with_presence",
@@ -4269,26 +4596,6 @@ public class ContactsProvider extends AbstractSyncableContentProvider {
         map.putAll(presenceColumns);
         map.putAll(peopleColumns);
         sPresenceProjectionMap = map;
-
-        // Search suggestions projection map
-        map = new HashMap<String, String>();
-        map.put(SearchManager.SUGGEST_COLUMN_TEXT_1,
-                DISPLAY_NAME_SQL + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1);
-        map.put(SearchManager.SUGGEST_COLUMN_TEXT_2,
-                SUGGEST_DESCRIPTION_SQL + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_2);
-        map.put(SearchManager.SUGGEST_COLUMN_ICON_1,
-                com.android.internal.R.drawable.ic_contact_picture
-                + " AS " + SearchManager.SUGGEST_COLUMN_ICON_1);
-        map.put(SearchManager.SUGGEST_COLUMN_ICON_1_BITMAP,
-                Photos.DATA + " AS " + SearchManager.SUGGEST_COLUMN_ICON_1_BITMAP);
-        map.put(SearchManager.SUGGEST_COLUMN_ICON_2,
-                PRESENCE_ICON_SQL + " AS " + SearchManager.SUGGEST_COLUMN_ICON_2);
-        map.put(SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID,
-                "people._id AS " + SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID);
-        map.put(SearchManager.SUGGEST_COLUMN_SHORTCUT_ID,
-                "people._id AS " + SearchManager.SUGGEST_COLUMN_SHORTCUT_ID);
-        map.put(People._ID, "people._id AS " + People._ID);
-        sSearchSuggestionsProjectionMap = map;
 
         // Photos projection map
         map = new HashMap<String, String>();
