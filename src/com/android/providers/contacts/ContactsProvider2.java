@@ -3232,7 +3232,13 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
                             "Missing a lookup key", uri));
                 }
                 final String lookupKey = pathSegments.get(2);
-                final long contactId = lookupContactIdByLookupKey(mDb, lookupKey);
+                long contactId = lookupContactIdByLookupKey(mDb, lookupKey);
+
+		// If the above case fails, delete the contact using direct uri.
+		// [Postal, Website, Notes etc] gets deleted under this case.
+                if (contactId == -1) {
+		    contactId = ContentUris.parseId(uri);
+		}
                 return deleteContact(contactId);
             }
 
@@ -4873,6 +4879,11 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
             contactId = lookupContactIdByDisplayNames(db, segments);
         }
 
+        // If Name look up is failed, try looking for Phone numbers in "Phone"(Number) look up.
+        if(contactId == -1) {
+            contactId = lookupContactIdByPhoneNumber(db, segments);
+        }
+
         return contactId;
     }
 
@@ -4894,15 +4905,23 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
 
     private long lookupContactIdBySourceIds(SQLiteDatabase db,
                 ArrayList<LookupKeySegment> segments) {
+        int sourceIdCount = 0;
         StringBuilder sb = new StringBuilder();
         sb.append(RawContacts.SOURCE_ID + " IN (");
+
         for (int i = 0; i < segments.size(); i++) {
             LookupKeySegment segment = segments.get(i);
             if (segment.lookupType == ContactLookupKey.LOOKUP_TYPE_SOURCE_ID) {
+                sourceIdCount++;
                 DatabaseUtils.appendEscapedSQLString(sb, segment.key);
                 sb.append(",");
             }
         }
+
+        if (sourceIdCount == 0) {
+            return -1;
+        }
+
         sb.setLength(sb.length() - 1);      // Last comma
         sb.append(") AND " + RawContacts.CONTACT_ID + " NOT NULL");
 
@@ -5006,19 +5025,29 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
 
     private long lookupContactIdByDisplayNames(SQLiteDatabase db,
                 ArrayList<LookupKeySegment> segments) {
+        int displayNameCount = 0;
         StringBuilder sb = new StringBuilder();
         sb.append(NameLookupColumns.NORMALIZED_NAME + " IN (");
+
         for (int i = 0; i < segments.size(); i++) {
             LookupKeySegment segment = segments.get(i);
             if (segment.lookupType == ContactLookupKey.LOOKUP_TYPE_DISPLAY_NAME
                     || segment.lookupType == ContactLookupKey.LOOKUP_TYPE_RAW_CONTACT_ID) {
+                displayNameCount++;
                 DatabaseUtils.appendEscapedSQLString(sb, segment.key);
                 sb.append(",");
             }
         }
+
+        if (displayNameCount == 0) {
+            return -1;
+        }
+
         sb.setLength(sb.length() - 1);      // Last comma
-        sb.append(") AND " + NameLookupColumns.NAME_TYPE + "=" + NameLookupType.NAME_COLLATION_KEY
-                + " AND " + RawContacts.CONTACT_ID + " NOT NULL");
+        /* If the condition check is present, we can only delete the contacts that are saved with Actual name.
+           But with this, we can delete the contacts that are saved with "Family name/Nick name/Email/Organization"
+           present in Name lookup.*/
+        sb.append(") AND " + RawContacts.CONTACT_ID + " NOT NULL");
 
         Cursor c = db.query(LookupByDisplayNameQuery.TABLE, LookupByDisplayNameQuery.COLUMNS,
                  sb.toString(), null, null, null, null);
@@ -5061,6 +5090,65 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
     public void updateLookupKeyForRawContact(SQLiteDatabase db, long rawContactId) {
         mContactAggregator.updateLookupKeyForRawContact(db, rawContactId);
     }
+
+   private interface LookupByPhoneNumberQuery {
+        String TABLE = Tables.PHONE_LOOKUP;
+
+        String COLUMNS[] = {
+               PhoneLookupColumns.NORMALIZED_NUMBER,
+               PhoneLookupColumns.RAW_CONTACT_ID
+        };
+
+        int NORMALIZED_NUMBER = 0;
+        int RAW_CONTACT_ID = 1;
+    }
+
+    private long lookupContactIdByPhoneNumber(SQLiteDatabase db,
+                ArrayList<LookupKeySegment> segments) {
+        int PhoneNumberCount = 0;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(PhoneLookupColumns.NORMALIZED_NUMBER + " IN (");
+
+        for (int i = 0; i < segments.size(); i++) {
+            LookupKeySegment segment = segments.get(i);
+            if (segment.lookupType != ContactLookupKey.LOOKUP_TYPE_SOURCE_ID){
+                PhoneNumberCount++;
+                DatabaseUtils.appendEscapedSQLString(sb, segment.key);
+                sb.append(",");
+            }
+        }
+
+        if (PhoneNumberCount == 0) {
+            return -1;
+        }
+
+        sb.setLength(sb.length() - 1);
+        sb.append(") AND " + PhoneLookupColumns.RAW_CONTACT_ID + " NOT NULL");
+
+        Cursor c = db.query(LookupByPhoneNumberQuery.TABLE, LookupByPhoneNumberQuery.COLUMNS,
+                 sb.toString(), null, null, null, null);
+        try {
+           while (c.moveToNext())
+           {
+                String number = c.getString(LookupByPhoneNumberQuery.NORMALIZED_NUMBER);
+
+                for (int i = 0; i < segments.size(); i++) {
+                    LookupKeySegment segment = segments.get(i);
+                    if ((segment.lookupType != ContactLookupKey.LOOKUP_TYPE_SOURCE_ID)
+                               && segment.key.equals(number)) {
+                        segment.contactId = c.getLong(LookupByPhoneNumberQuery.RAW_CONTACT_ID);
+                        break;
+                    }
+                }
+            }
+        } finally {
+            c.close();
+        }
+
+        return getMostReferencedContactId(segments);
+    }
+
 
     /**
      * Returns the contact ID that is mentioned the highest number of times.
