@@ -1430,7 +1430,8 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
             long dataId;
             if (values.containsKey(Phone.NUMBER)) {
                 String number = values.getAsString(Phone.NUMBER);
-                String normalizedNumber = computeNormalizedNumber(number, values);
+                String normalizedNumber = NameNormalizer.normalize(number);
+                values.put(PhoneColumns.NORMALIZED_NUMBER, normalizedNumber);
 
                 dataId = super.insert(db, rawContactId, values);
 
@@ -1450,7 +1451,8 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
             long rawContactId = c.getLong(DataUpdateQuery.RAW_CONTACT_ID);
             if (values.containsKey(Phone.NUMBER)) {
                 String number = values.getAsString(Phone.NUMBER);
-                String normalizedNumber = computeNormalizedNumber(number, values);
+                String normalizedNumber = NameNormalizer.normalize(number);
+                values.put(PhoneColumns.NORMALIZED_NUMBER, normalizedNumber);
 
                 super.update(db, values, c, callerIsSyncAdapter);
 
@@ -2655,7 +2657,13 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
                     throw new IllegalArgumentException("URI " + uri + " is missing a lookup key");
                 }
                 final String lookupKey = pathSegments.get(2);
-                final long contactId = lookupContactIdByLookupKey(mDb, lookupKey);
+                long contactId = lookupContactIdByLookupKey(mDb, lookupKey);
+
+		// If the above case fails, delete the contact using direct uri.
+		// [Postal, Website, Notes etc] gets deleted under this case.
+                if (contactId == -1) {
+		    contactId = ContentUris.parseId(uri);
+		}
                 return deleteContact(contactId);
             }
 
@@ -3860,8 +3868,16 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
         ArrayList<LookupKeySegment> segments = key.parse(lookupKey);
 
         long contactId = lookupContactIdBySourceIds(db, segments);
+
+        // In case of no source ID, start looking by Names in "Name" Look up table.
+        //   [ActualName, FamilyName, NickName, Email, Organization] all these get deleted using "Name" lookup.
         if (contactId == -1) {
-            contactId = lookupContactIdByDisplayNames(db, segments);
+           contactId = lookupContactIdByDisplayNames(db, segments);
+        }
+
+        // If Name look up is failed, try looking for Phone numbers in "Phone"(Number) look up.
+        if(contactId == -1) {
+            contactId = lookupContactIdByPhoneNumber(db, segments);
         }
 
         return contactId;
@@ -3886,10 +3902,18 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
     private long lookupContactIdBySourceIds(SQLiteDatabase db,
                 ArrayList<LookupKeySegment> segments) {
         int sourceIdCount = 0;
+
+        // First try sync ids
+        StringBuilder sb = new StringBuilder();
+        sb.append(RawContacts.SOURCE_ID + " IN (");
+
         for (int i = 0; i < segments.size(); i++) {
             LookupKeySegment segment = segments.get(i);
+
             if (segment.sourceIdLookup) {
                 sourceIdCount++;
+                DatabaseUtils.appendEscapedSQLString(sb, segment.key);
+                sb.append(",");
             }
         }
 
@@ -3897,16 +3921,6 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
             return -1;
         }
 
-        // First try sync ids
-        StringBuilder sb = new StringBuilder();
-        sb.append(RawContacts.SOURCE_ID + " IN (");
-        for (int i = 0; i < segments.size(); i++) {
-            LookupKeySegment segment = segments.get(i);
-            if (segment.sourceIdLookup) {
-                DatabaseUtils.appendEscapedSQLString(sb, segment.key);
-                sb.append(",");
-            }
-        }
         sb.setLength(sb.length() - 1);      // Last comma
         sb.append(") AND " + RawContacts.CONTACT_ID + " NOT NULL");
 
@@ -3954,10 +3968,17 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
     private long lookupContactIdByDisplayNames(SQLiteDatabase db,
                 ArrayList<LookupKeySegment> segments) {
         int displayNameCount = 0;
+
+        // First try sync ids
+        StringBuilder sb = new StringBuilder();
+        sb.append(NameLookupColumns.NORMALIZED_NAME + " IN (");
+
         for (int i = 0; i < segments.size(); i++) {
             LookupKeySegment segment = segments.get(i);
             if (!segment.sourceIdLookup) {
                 displayNameCount++;
+                DatabaseUtils.appendEscapedSQLString(sb, segment.key);
+                sb.append(",");
             }
         }
 
@@ -3965,19 +3986,11 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
             return -1;
         }
 
-        // First try sync ids
-        StringBuilder sb = new StringBuilder();
-        sb.append(NameLookupColumns.NORMALIZED_NAME + " IN (");
-        for (int i = 0; i < segments.size(); i++) {
-            LookupKeySegment segment = segments.get(i);
-            if (!segment.sourceIdLookup) {
-                DatabaseUtils.appendEscapedSQLString(sb, segment.key);
-                sb.append(",");
-            }
-        }
         sb.setLength(sb.length() - 1);      // Last comma
-        sb.append(") AND " + NameLookupColumns.NAME_TYPE + "=" + NameLookupType.NAME_COLLATION_KEY
-                + " AND " + RawContacts.CONTACT_ID + " NOT NULL");
+        /* If the condition check is present, we can only delete the contacts that are saved with Actual name.
+           But with this, we can delete the contacts that are saved with "Family name/Nick name/Email/Organization"
+           present in Name lookup.*/
+        sb.append(") AND " + RawContacts.CONTACT_ID + " NOT NULL");
 
         Cursor c = db.query(LookupByDisplayNameQuery.TABLE, LookupByDisplayNameQuery.COLUMNS,
                  sb.toString(), null, null, null, null);
@@ -3993,6 +4006,63 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
                     if (!segment.sourceIdLookup && accountHashCode == segment.accountHashCode
                             && segment.key.equals(name)) {
                         segment.contactId = c.getLong(LookupByDisplayNameQuery.CONTACT_ID);
+                        break;
+                    }
+                }
+            }
+        } finally {
+            c.close();
+        }
+
+        return getMostReferencedContactId(segments);
+    }
+
+   private interface LookupByPhoneNumberQuery {
+        String TABLE = Tables.PHONE_LOOKUP;
+
+        String COLUMNS[] = {
+               PhoneLookupColumns.NORMALIZED_NUMBER,
+               PhoneLookupColumns.RAW_CONTACT_ID
+        };
+
+        int NORMALIZED_NUMBER = 0;
+        int RAW_CONTACT_ID = 1;
+    }
+
+    private long lookupContactIdByPhoneNumber(SQLiteDatabase db,
+                ArrayList<LookupKeySegment> segments) {
+        int PhoneNumberCount = 0;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(PhoneLookupColumns.NORMALIZED_NUMBER + " IN (");
+
+        for (int i = 0; i < segments.size(); i++) {
+            LookupKeySegment segment = segments.get(i);
+            if (!segment.sourceIdLookup) {
+                PhoneNumberCount++;
+                DatabaseUtils.appendEscapedSQLString(sb, segment.key);
+                sb.append(",");
+            }
+        }
+
+        if (PhoneNumberCount == 0) {
+            return -1;
+        }
+
+        sb.setLength(sb.length() - 1);
+        sb.append(") AND " + PhoneLookupColumns.RAW_CONTACT_ID + " NOT NULL");
+
+        Cursor c = db.query(LookupByPhoneNumberQuery.TABLE, LookupByPhoneNumberQuery.COLUMNS,
+                 sb.toString(), null, null, null, null);
+        try {
+           while (c.moveToNext())
+           {
+                String number = c.getString(LookupByPhoneNumberQuery.NORMALIZED_NUMBER);
+
+                for (int i = 0; i < segments.size(); i++) {
+                    LookupKeySegment segment = segments.get(i);
+                    if (!segment.sourceIdLookup && segment.key.equals(number)) {
+                        segment.contactId = c.getLong(LookupByPhoneNumberQuery.RAW_CONTACT_ID);
                         break;
                     }
                 }
