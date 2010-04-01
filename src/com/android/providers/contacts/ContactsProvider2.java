@@ -1430,9 +1430,7 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
             long dataId;
             if (values.containsKey(Phone.NUMBER)) {
                 String number = values.getAsString(Phone.NUMBER);
-                String normalizedNumber = NameNormalizer.normalize(number);
-                values.put(PhoneColumns.NORMALIZED_NUMBER, normalizedNumber);
-
+                String normalizedNumber = computeNormalizedNumber(number, values);
                 dataId = super.insert(db, rawContactId, values);
 
                 updatePhoneLookup(db, rawContactId, dataId, number, normalizedNumber);
@@ -1451,8 +1449,7 @@ public class ContactsProvider2 extends SQLiteContentProvider implements OnAccoun
             long rawContactId = c.getLong(DataUpdateQuery.RAW_CONTACT_ID);
             if (values.containsKey(Phone.NUMBER)) {
                 String number = values.getAsString(Phone.NUMBER);
-                String normalizedNumber = NameNormalizer.normalize(number);
-                values.put(PhoneColumns.NORMALIZED_NUMBER, normalizedNumber);
+                String normalizedNumber = computeNormalizedNumber(number, values);
 
                 super.update(db, values, c, callerIsSyncAdapter);
 
