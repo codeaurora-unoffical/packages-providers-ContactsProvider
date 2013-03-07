@@ -275,8 +275,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 " LEFT OUTER JOIN (SELECT "
                         + "data.data1 AS member_count_group_id, "
                         + "COUNT(data.raw_contact_id) AS group_member_count "
-                    + "FROM data "
-                    + "WHERE "
+                    + "FROM data , raw_contacts "
+                    + "WHERE data.raw_contact_id = raw_contacts._id and raw_contacts.deleted != 1 and "
                         + "data.mimetype_id = (SELECT _id FROM mimetypes WHERE "
                             + "mimetypes.mimetype = '" + GroupMembership.CONTENT_ITEM_TYPE + "')"
                     + "GROUP BY member_count_group_id) AS member_count_table" // End of inner query
@@ -460,6 +460,10 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String CONCRETE_ID = Tables.GROUPS + "." + BaseColumns._ID;
         public static final String CONCRETE_SOURCE_ID = Tables.GROUPS + "." + Groups.SOURCE_ID;
 
+        public static final String CONCRETE_ACCOUNT_NAME =
+                Tables.GROUPS + "." + Groups.ACCOUNT_NAME;
+        public static final String CONCRETE_ACCOUNT_TYPE =
+                Tables.GROUPS + "." + Groups.ACCOUNT_TYPE;
         public static final String ACCOUNT_ID = "account_id";
         public static final String CONCRETE_ACCOUNT_ID = Tables.GROUPS + "." + ACCOUNT_ID;
     }
@@ -1161,6 +1165,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE " + Tables.GROUPS + " (" +
                 Groups._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 GroupsColumns.PACKAGE_ID + " INTEGER REFERENCES package(_id)," +
+                Groups.ACCOUNT_NAME + " STRING DEFAULT NULL, " +
+                Groups.ACCOUNT_TYPE + " STRING DEFAULT NULL, " +
                 GroupsColumns.ACCOUNT_ID + " INTEGER REFERENCES " +
                     Tables.ACCOUNTS + "(" + AccountsColumns._ID + ")," +
                 Groups.SOURCE_ID + " TEXT," +
