@@ -84,6 +84,8 @@ public class CallLogProvider extends ContentProvider {
         sCallsProjectionMap.put(Calls.CACHED_NORMALIZED_NUMBER, Calls.CACHED_NORMALIZED_NUMBER);
         sCallsProjectionMap.put(Calls.CACHED_PHOTO_ID, Calls.CACHED_PHOTO_ID);
         sCallsProjectionMap.put(Calls.CACHED_FORMATTED_NUMBER, Calls.CACHED_FORMATTED_NUMBER);
+        sCallsProjectionMap.put(Calls.SUBSCRIPTION, Calls.SUBSCRIPTION);//xiaohong add
+        sCallsProjectionMap.put(Calls.DURATION_TYPE, Calls.DURATION_TYPE);//xiaohong add 
     }
 
     private ContactsDatabaseHelper mDbHelper;
@@ -277,6 +279,12 @@ public class CallLogProvider extends ContentProvider {
             case CALLS:
                 return getDatabaseModifier(db).delete(Tables.CALLS,
                         selectionBuilder.build(), selectionArgs);
+             //xiaohong add 
+            case CALLS_ID:
+                selectionBuilder.addClause(getEqualityClause(Calls._ID, parseCallIdFromUri(uri)));
+                return getDatabaseModifier(db).delete(Tables.CALLS,
+                        selectionBuilder.build(), selectionArgs); 
+             //xiaohong add end           
             default:
                 throw new UnsupportedOperationException("Cannot delete that URL: " + uri);
         }
