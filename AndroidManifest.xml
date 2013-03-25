@@ -23,6 +23,18 @@
         android:icon="@drawable/app_icon"
         android:allowBackup="false">
 
+        <receiver android:name="BootAcore">
+            <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- Stub service used to keep our process alive long enough for
+         background threads to finish their operations. -->
+        <service
+            android:name=".EmptyService"
+            android:exported="false" />
+
         <provider android:name="ContactsProvider2"
             android:authorities="contacts;com.android.contacts"
             android:label="@string/provider_label"
@@ -56,6 +68,9 @@
             android:exported="true"
             android:permission="com.android.voicemail.permission.ADD_VOICEMAIL">
         </provider>
+
+        <provider android:name="LocalGroupsProvider"
+            android:authorities="com.android.contacts.groups"/>
 
         <!-- Handles database upgrades after OTAs, then disables itself -->
         <receiver android:name="ContactsUpgradeReceiver">
