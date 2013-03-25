@@ -194,6 +194,15 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private static final int BACKGROUND_TASK_CHANGE_LOCALE = 9;
     private static final int BACKGROUND_TASK_CLEANUP_PHOTOS = 10;
 
+    /** add for smart dialer. */
+    static final String[] num2 = {"a","b","c"};
+    static final String[] num3 = {"d","e","f"};
+    static final String[] num4 = {"g","h","i"};
+    static final String[] num5 = {"j","k","l"};
+    static final String[] num6 = {"m","n","o"};
+    static final String[] num7 = {"p","q","r","s"};
+    static final String[] num8 = {"t","u","v"};
+    static final String[] num9 = {"w","x","y","z"};
     /** Default for the maximum number of returned aggregation suggestions. */
     private static final int DEFAULT_MAX_SUGGESTIONS = 5;
 
@@ -367,6 +376,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
     private static final int DISPLAY_PHOTO_ID = 22000;
     private static final int PHOTO_DIMENSIONS = 22001;
+    private static final int SMART_DIALER_FILTER = 22002;
 
     // Inserts into URIs in this map will direct to the profile database if the parent record's
     // value (looked up from the ContentValues object with the key specified by the value in this
@@ -1222,6 +1232,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
         matcher.addURI(ContactsContract.AUTHORITY, "display_photo/#", DISPLAY_PHOTO_ID);
         matcher.addURI(ContactsContract.AUTHORITY, "photo_dimensions", PHOTO_DIMENSIONS);
+        matcher.addURI(ContactsContract.AUTHORITY, "smart_dialer_filter", SMART_DIALER_FILTER);
     }
 
     private static class DirectoryInfo {
@@ -5077,6 +5088,63 @@ public class ContactsProvider2 extends AbstractContactsProvider
         }
     }
 
+    //add for smart dialer start
+    private static final ProjectionMap SMARTR_DIALER_FILTER_PROJECTION = ProjectionMap.builder()
+            .add("_id")
+            .add("normalized_number")
+            .add("display_name")
+            .add("photo_id")
+            .add("lookup")
+            .build();
+
+    private String[] getStringsFromNumber(char number){
+        switch(number){
+        case '2':
+            return num2;
+        case '3':
+            return num3;
+        case '4':
+            return num4;
+        case '5':
+            return num5;
+        case '6':
+            return num6;
+        case '7':
+            return num7;
+        case '8':
+            return num8;
+        case '9':
+            return num9;
+        }
+        return null;
+    }
+
+    private String[] joinStringArray(String[] s1, String[] s2){
+        if(null == s1){
+            return s2;
+        }else if(null == s2){
+            return s1;
+        }
+        String[] temp = new String[s1.length*s2.length];
+        int pos = 0;
+        for(int i=0;i<s1.length;i++){
+            for(int j=0;j<s2.length;j++){
+                temp[pos] = s1[i]+s2[j];
+                pos++;
+            }
+        }
+        return temp;
+    }
+
+    private String[] getStringsFromNumbers(char[] numbers){
+        String[] temp = getStringsFromNumber(numbers[0]);
+        for(int i=1;i<numbers.length;i++){
+            temp = joinStringArray(temp,getStringsFromNumber(numbers[i]));
+        }
+        return temp;
+    }
+    //add for smart dialer end
+
     protected Cursor queryLocal(final Uri uri, final String[] projection, String selection,
             String[] selectionArgs, String sortOrder, final long directoryId,
             final CancellationSignal cancellationSignal) {
@@ -5542,6 +5610,20 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 return buildSingleRowResult(projection,
                         new String[] {DisplayPhoto.DISPLAY_MAX_DIM, DisplayPhoto.THUMBNAIL_MAX_DIM},
                         new Object[] {getMaxDisplayPhotoDim(), getMaxThumbnailDim()});
+            }
+
+            case SMART_DIALER_FILTER: {
+                String filter = uri.getQueryParameter("filter");
+                if(TextUtils.isEmpty(filter)) break;
+
+                String querySelect ="view_contacts JOIN (SELECT raw_contact_id, normalized_number, data_id FROM phone_lookup WHERE normalized='0') ON (name_raw_contact_id=raw_contact_id) "
+                        + " LEFT OUTER JOIN agg_presence ON (_id = agg_presence.presence_contact_id) LEFT OUTER JOIN status_updates contacts_status_updates ON (status_update_id=contacts_status_updates.status_update_data_id) "
+                        + " WHERE (_id IN (SELECT contact_id FROM search_index WHERE name_digit like '"+ filter + "%' or name_digit like '% " + filter + "%')" + " or normalized_number like '%" + filter +"%') AND normalized_number is not null AND _id IN default_directory "
+                        +"order by view_contacts.last_time_contacted desc";
+
+                qb.setTables(querySelect);
+                qb.setProjectionMap(SMARTR_DIALER_FILTER_PROJECTION);
+                break;
             }
 
             case PHONES:

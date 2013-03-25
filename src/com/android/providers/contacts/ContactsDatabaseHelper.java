@@ -485,6 +485,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String RAW_CONTACT_ID = "raw_contact_id";
         public static final String NORMALIZED_NUMBER = "normalized_number";
         public static final String MIN_MATCH = "min_match";
+        public static final String NORMALIZED = "normalized";
     }
 
     public interface NameLookupColumns {
@@ -645,6 +646,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String CONTACT_ID = "contact_id";
         public static final String CONTENT = "content";
         public static final String NAME = "name";
+        public static final String NAME_DIGIT = "name_digit";
         public static final String TOKENS = "tokens";
     }
 
@@ -1112,7 +1114,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 PhoneLookupColumns.RAW_CONTACT_ID
                         + " INTEGER REFERENCES raw_contacts(_id) NOT NULL," +
                 PhoneLookupColumns.NORMALIZED_NUMBER + " TEXT NOT NULL," +
-                PhoneLookupColumns.MIN_MATCH + " TEXT NOT NULL" +
+                PhoneLookupColumns.MIN_MATCH + " TEXT NOT NULL," +
+                PhoneLookupColumns.NORMALIZED + " TEXT NOT NULL" +
         ");");
 
         db.execSQL("CREATE INDEX phone_lookup_index ON " + Tables.PHONE_LOOKUP + " (" +
@@ -1359,6 +1362,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                     + SearchIndexColumns.CONTACT_ID + " INTEGER REFERENCES contacts(_id) NOT NULL,"
                     + SearchIndexColumns.CONTENT + " TEXT, "
                     + SearchIndexColumns.NAME + " TEXT, "
+                    + SearchIndexColumns.NAME_DIGIT + " TEXT, "
                     + SearchIndexColumns.TOKENS + " TEXT"
                 + ")");
         if (rebuildSqliteStats) {
