@@ -70,7 +70,11 @@
         </provider>
 
         <provider android:name="LocalGroupsProvider"
-            android:authorities="com.android.contacts.groups"/>
+            android:authorities="com.android.contacts.groups"
+            android:multiprocess="false"
+            android:exported="true"
+            android:readPermission="android.permission.READ_CONTACTS"
+            android:writePermission="android.permission.WRITE_CONTACTS"/>
 
         <!-- Handles database upgrades after OTAs, then disables itself -->
         <receiver android:name="ContactsUpgradeReceiver">
