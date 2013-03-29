@@ -2557,7 +2557,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         if(rawContactId != -1){
             insertSimPhoto(accountWithDataSet, rawContactId);
         }
-        int aggregationMode = RawContacts.AGGREGATION_MODE_DEFAULT;
+        int aggregationMode = RawContacts.AGGREGATION_MODE_DISABLED;
         if (mValues.containsKey(RawContacts.AGGREGATION_MODE)) {
             aggregationMode = mValues.getAsInteger(RawContacts.AGGREGATION_MODE);
         }
@@ -4386,7 +4386,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         }
         if (requestUndoDelete) {
             values.put(ContactsContract.RawContacts.AGGREGATION_MODE,
-                    ContactsContract.RawContacts.AGGREGATION_MODE_DEFAULT);
+                    ContactsContract.RawContacts.AGGREGATION_MODE_DISABLED);
         }
 
         int count = db.update(Tables.RAW_CONTACTS, values, selection, mSelectionArgs1);
@@ -5916,8 +5916,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 }
                 break;
             }
-			
-			case LOCAL_GROUPS_FILTER: {
+
+            case LOCAL_GROUPS_FILTER: {
                 setTablesAndProjectionMapForData(qb, uri, projection, false);
                 qb.appendWhere(" AND " + Data.MIMETYPE + " = '" + LocalGroup.CONTENT_ITEM_TYPE
                         + "' AND " + Data.DATA1 + " = '" + uri.getLastPathSegment() + "'");
@@ -6163,8 +6163,15 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
                 setTablesAndProjectionMapForContacts(qb, uri, projection);
 
-                return mAggregator.get().queryAggregationSuggestions(qb, projection, contactId,
-                        maxSuggestions, filter, parameters);
+                String select = appendLocalAccountSelectionIfNeeded(uri);
+
+                if (select == null) {
+                    return mAggregator.get().queryAggregationSuggestions(qb, projection, contactId,
+                            maxSuggestions, filter, parameters);
+                } else {
+                    return mAggregator.get().queryAggregationSuggestions(qb, projection, contactId,
+                            maxSuggestions, filter, parameters, select);
+                }
             }
 
             case SETTINGS: {
@@ -7266,6 +7273,58 @@ public class ContactsProvider2 extends AbstractContactsProvider
         qb.appendWhere(sb.toString());
     }
 
+    private String appendLocalAccountSelectionIfNeeded(Uri uri) {
+        final StringBuilder sb = new StringBuilder();
+
+        String withoutSim = getQueryParameter(uri, WITHOUT_SIM_FLAG);
+        if ("true".equals(withoutSim)) {
+            final long[] accountId = getAccountIdWithoutSim(uri);
+
+            if (accountId == null || accountId.length == 0) {
+                // No such account or no SIM card is inserted,the WHERE clause of the query should be true.
+                sb.setLength(0);
+                sb.append("(1)");
+            } else {
+                    sb.append(
+                            " (" + Contacts._ID + " not IN (" +
+                                    "SELECT " + RawContacts.CONTACT_ID + " FROM "
+                                    + Tables.RAW_CONTACTS +
+                                    " WHERE " + RawContacts.CONTACT_ID + " not NULL AND ( ");
+                    for (int i = 0; i < accountId.length; i++) {
+                        sb.append(RawContactsColumns.ACCOUNT_ID + "="
+                                + accountId[i]);
+                        if(i != accountId.length-1){
+                            sb.append(" OR ");
+                        }
+                }
+                    sb.append(")))");
+            }
+
+            return sb.toString();
+        }
+        else{
+            //final AccountWithDataSet accountWithDataSet = getAccountWithDataSetFromUri(uri);
+            // Accounts are valid by only checking one parameter, since we've
+            // already ruled out partial accounts.
+            //final boolean validAccount = !TextUtils.isEmpty(accountWithDataSet.getAccountName());
+            //if (validAccount) {
+            //    final Long accountId = mDbHelper.get().getAccountIdOrNull(accountWithDataSet);
+            //    if (accountId == null) {
+            //        // No such account.
+                    sb.setLength(0);
+            //        sb.append("(1=2)");
+            //    } else {
+            //        sb.append(
+            //            " AND (" + Contacts._ID + " IN (" +
+            //            "SELECT " + RawContacts.CONTACT_ID + " FROM " + Tables.RAW_CONTACTS +
+            //            " WHERE " + RawContactsColumns.ACCOUNT_ID + "=" + accountId.toString() +
+            //            "))");
+            //    }
+            //}
+            return null;
+        }
+    }
+
     private void appendAccountFromParameter(SQLiteQueryBuilder qb, Uri uri) {
         final AccountWithDataSet accountWithDataSet = getAccountWithDataSetFromUri(uri);
 
@@ -7315,7 +7374,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         final String accountName = getQueryParameter(uri, RawContacts.ACCOUNT_NAME);
         Cursor c = null;
         long[] accountId = null;
-		final SQLiteDatabase db = mDbHelper.get().getReadableDatabase();
+        final SQLiteDatabase db = mDbHelper.get().getReadableDatabase();
         try {
             if (null != accountType) {
                 c =db.query(Tables.ACCOUNTS,
@@ -7336,6 +7395,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
                 for (int i = 0; i < c.getCount(); i++) {
                     if (c.moveToNext()) {
+                        android.util.Log.i("sss", "c.getInt(0) " + c.getInt(0));
                         accountId[c.getPosition()] = c.getInt(0);
                     }
                 }

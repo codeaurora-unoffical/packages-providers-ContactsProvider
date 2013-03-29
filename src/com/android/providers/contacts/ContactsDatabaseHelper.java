@@ -974,7 +974,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 RawContacts.DELETED + " INTEGER NOT NULL DEFAULT 0," +
                 RawContacts.CONTACT_ID + " INTEGER REFERENCES contacts(_id)," +
                 RawContacts.AGGREGATION_MODE + " INTEGER NOT NULL DEFAULT " +
-                        RawContacts.AGGREGATION_MODE_DEFAULT + "," +
+                        RawContacts.AGGREGATION_MODE_DISABLED + "," +
                 RawContactsColumns.AGGREGATION_NEEDED + " INTEGER NOT NULL DEFAULT 1," +
                 RawContacts.CUSTOM_RINGTONE + " TEXT," +
                 RawContacts.SEND_TO_VOICEMAIL + " INTEGER NOT NULL DEFAULT 0," +
