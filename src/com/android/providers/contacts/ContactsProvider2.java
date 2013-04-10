@@ -5161,6 +5161,12 @@ public class ContactsProvider2 extends AbstractContactsProvider
         String addressBookIndexerCountExpression = null;
 
         final int match = sUriMatcher.match(uri);
+        Log.i(TAG, "uri=" + uri + " selection=" + selection + " match=" + match);
+        if(selectionArgs != null) {
+            for(int i = 0; i < selectionArgs.length; i++) {
+                Log.i(TAG, "selectionArgs=" + selectionArgs[i] );
+            }
+        }
         switch (match) {
             case SYNCSTATE:
             case PROFILE_SYNCSTATE:
