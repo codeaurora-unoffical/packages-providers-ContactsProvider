@@ -53,12 +53,15 @@ public class CallLogProvider extends ContentProvider {
     private static final int CALLS_ID = 2;
 
     private static final int CALLS_FILTER = 3;
+    
+    private static final int CALLS_SEARCH_SUGGEST = 4;
 
     private static final UriMatcher sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
     static {
         sURIMatcher.addURI(CallLog.AUTHORITY, "calls", CALLS);
         sURIMatcher.addURI(CallLog.AUTHORITY, "calls/#", CALLS_ID);
         sURIMatcher.addURI(CallLog.AUTHORITY, "calls/filter/*", CALLS_FILTER);
+        sURIMatcher.addURI(CallLog.AUTHORITY, "calls/searchSuggest", CALLS_SEARCH_SUGGEST); 
     }
 
     private static final HashMap<String, String> sCallsProjectionMap;
@@ -152,6 +155,15 @@ public class CallLogProvider extends ContentProvider {
                 break;
             }
 
+            case CALLS_SEARCH_SUGGEST: {
+            	
+                qb.setTables("calls");
+                qb.setProjectionMap(sCallsProjectionMap);
+                String data = uri.getQueryParameter("pattern");
+                String query = "number LIKE '%" + data + "%' OR name LIKE '%" + data + "%'"; 
+                qb.appendWhere(query);
+                break; 
+            }
             default:
                 throw new IllegalArgumentException("Unknown URL " + uri);
         }
