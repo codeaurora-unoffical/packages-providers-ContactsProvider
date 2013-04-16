@@ -2489,4 +2489,103 @@ public class ContactAggregator {
             // TODO: add support for other parameter kinds
         }
     }
+    public Cursor queryAggregationSuggestions(SQLiteQueryBuilder qb, String[] projection,
+            long contactId, int maxSuggestions, String filter, 
+            ArrayList<AggregationSuggestionParameter> parameters, String where) {
+        final SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        db.beginTransaction();
+        try {
+            List<MatchScore> bestMatches = findMatchingContacts(db, contactId, parameters);
+            return queryMatchingContacts(qb, db, projection, bestMatches, maxSuggestions,
+                    filter, where);
+        } finally {
+            db.endTransaction();
+        }
+        
+    }
+
+    private Cursor queryMatchingContacts(SQLiteQueryBuilder qb, SQLiteDatabase db,
+            String[] projection, List<MatchScore> bestMatches, int maxSuggestions, String filter, String where) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(Contacts._ID);
+        sb.append(" IN (");
+        for (int i = 0; i < bestMatches.size(); i++) {
+            MatchScore matchScore = bestMatches.get(i);
+            if (i != 0) {
+                sb.append(",");
+            }
+            sb.append(matchScore.getContactId());
+        }
+        sb.append(")");
+        
+        if (!TextUtils.isEmpty(where)) {
+            sb.append(" AND ");
+            sb.append(where);
+        }
+        
+        if (!TextUtils.isEmpty(filter)) {
+            sb.append(" AND " + Contacts._ID + " IN ");
+            mContactsProvider.appendContactFilterAsNestedQuery(sb, filter);
+        }
+
+        // Run a query and find ids of best matching contacts satisfying the filter (if any)
+        HashSet<Long> foundIds = new HashSet<Long>();
+        Cursor cursor = db.query(qb.getTables(), ContactIdQuery.COLUMNS, sb.toString(),
+                null, null, null, null);
+        try {
+            while(cursor.moveToNext()) {
+                foundIds.add(cursor.getLong(ContactIdQuery._ID));
+            }
+        } finally {
+            cursor.close();
+        }
+
+        // Exclude all contacts that did not match the filter
+        Iterator<MatchScore> iter = bestMatches.iterator();
+        while (iter.hasNext()) {
+            long id = iter.next().getContactId();
+            if (!foundIds.contains(id)) {
+                iter.remove();
+            }
+        }
+
+        // Limit the number of returned suggestions
+        if (bestMatches.size() > maxSuggestions) {
+            bestMatches = bestMatches.subList(0, maxSuggestions);
+        }
+
+        // Build an in-clause with the remaining contact IDs
+        sb.setLength(0);
+        sb.append(Contacts._ID);
+        sb.append(" IN (");
+        for (int i = 0; i < bestMatches.size(); i++) {
+            MatchScore matchScore = bestMatches.get(i);
+            if (i != 0) {
+                sb.append(",");
+            }
+            sb.append(matchScore.getContactId());
+        }
+        sb.append(")");
+
+        // Run the final query with the required projection and contact IDs found by the first query
+        cursor = qb.query(db, projection, sb.toString(), null, null, null, Contacts._ID);
+
+        // Build a sorted list of discovered IDs
+        ArrayList<Long> sortedContactIds = new ArrayList<Long>(bestMatches.size());
+        for (MatchScore matchScore : bestMatches) {
+            sortedContactIds.add(matchScore.getContactId());
+        }
+
+        Collections.sort(sortedContactIds);
+
+        // Map cursor indexes according to the descending order of match scores
+        int[] positionMap = new int[bestMatches.size()];
+        for (int i = 0; i < positionMap.length; i++) {
+            long id = bestMatches.get(i).getContactId();
+            positionMap[i] = sortedContactIds.indexOf(id);
+        }
+
+        return new ReorderingCursorWrapper(cursor, positionMap);
+    }
 }
