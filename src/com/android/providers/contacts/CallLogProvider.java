@@ -53,12 +53,15 @@ public class CallLogProvider extends ContentProvider {
     private static final int CALLS_ID = 2;
 
     private static final int CALLS_FILTER = 3;
+    
+    private static final int CALLS_SEARCH_SUGGEST = 4;
 
     private static final UriMatcher sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
     static {
         sURIMatcher.addURI(CallLog.AUTHORITY, "calls", CALLS);
         sURIMatcher.addURI(CallLog.AUTHORITY, "calls/#", CALLS_ID);
         sURIMatcher.addURI(CallLog.AUTHORITY, "calls/filter/*", CALLS_FILTER);
+        sURIMatcher.addURI(CallLog.AUTHORITY, "calls/searchSuggest", CALLS_SEARCH_SUGGEST); 
     }
 
     private static final HashMap<String, String> sCallsProjectionMap;
@@ -84,6 +87,8 @@ public class CallLogProvider extends ContentProvider {
         sCallsProjectionMap.put(Calls.CACHED_NORMALIZED_NUMBER, Calls.CACHED_NORMALIZED_NUMBER);
         sCallsProjectionMap.put(Calls.CACHED_PHOTO_ID, Calls.CACHED_PHOTO_ID);
         sCallsProjectionMap.put(Calls.CACHED_FORMATTED_NUMBER, Calls.CACHED_FORMATTED_NUMBER);
+        sCallsProjectionMap.put(Calls.SUBSCRIPTION, Calls.SUBSCRIPTION);
+        sCallsProjectionMap.put(Calls.DURATION_TYPE, Calls.DURATION_TYPE);
     }
 
     private ContactsDatabaseHelper mDbHelper;
@@ -150,6 +155,15 @@ public class CallLogProvider extends ContentProvider {
                 break;
             }
 
+            case CALLS_SEARCH_SUGGEST: {
+            	
+                qb.setTables("calls");
+                qb.setProjectionMap(sCallsProjectionMap);
+                String data = uri.getQueryParameter("pattern");
+                String query = "number LIKE '%" + data + "%' OR name LIKE '%" + data + "%'"; 
+                qb.appendWhere(query);
+                break; 
+            }
             default:
                 throw new IllegalArgumentException("Unknown URL " + uri);
         }
@@ -277,6 +291,12 @@ public class CallLogProvider extends ContentProvider {
             case CALLS:
                 return getDatabaseModifier(db).delete(Tables.CALLS,
                         selectionBuilder.build(), selectionArgs);
+            
+            case CALLS_ID:
+                selectionBuilder.addClause(getEqualityClause(Calls._ID, parseCallIdFromUri(uri)));
+                return getDatabaseModifier(db).delete(Tables.CALLS,
+                        selectionBuilder.build(), selectionArgs); 
+                  
             default:
                 throw new UnsupportedOperationException("Cannot delete that URL: " + uri);
         }

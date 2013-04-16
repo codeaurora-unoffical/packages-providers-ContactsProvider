@@ -1251,6 +1251,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Calls.CACHED_NORMALIZED_NUMBER + " TEXT," +
                 Calls.CACHED_PHOTO_ID + " INTEGER NOT NULL DEFAULT 0," +
                 Calls.CACHED_FORMATTED_NUMBER + " TEXT," +
+                Calls.SUBSCRIPTION + " INTEGER," +
+                Calls.DURATION_TYPE + " INTEGER," +
                 Voicemails._DATA + " TEXT," +
                 Voicemails.HAS_CONTENT + " INTEGER," +
                 Voicemails.MIME_TYPE + " TEXT," +
