@@ -122,6 +122,7 @@ public class DataRowHandlerForPhoneNumber extends DataRowHandlerForCommonDataKin
                 phoneValues.put(PhoneLookupColumns.RAW_CONTACT_ID, rawContactId);
                 phoneValues.put(PhoneLookupColumns.DATA_ID, dataId);
                 phoneValues.put(PhoneLookupColumns.NORMALIZED_NUMBER, normalizedNumber);
+                phoneValues.put(PhoneLookupColumns.NORMALIZED, "0");
                 phoneValues.put(PhoneLookupColumns.MIN_MATCH,
                         PhoneNumberUtils.toCallerIDMinMatch(normalizedNumber));
                 db.insert(Tables.PHONE_LOOKUP, null, phoneValues);
@@ -130,6 +131,7 @@ public class DataRowHandlerForPhoneNumber extends DataRowHandlerForCommonDataKin
                     phoneValues.put(PhoneLookupColumns.NORMALIZED_NUMBER, numberE164);
                     phoneValues.put(PhoneLookupColumns.MIN_MATCH,
                             PhoneNumberUtils.toCallerIDMinMatch(numberE164));
+                    phoneValues.put(PhoneLookupColumns.NORMALIZED, "1");
                     db.insert(Tables.PHONE_LOOKUP, null, phoneValues);
                 }
             }
