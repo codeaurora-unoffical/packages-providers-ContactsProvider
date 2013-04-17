@@ -40,7 +40,7 @@ public abstract class AbstractContactsProvider extends ContentProvider
 
     public static final String TAG = "ContactsProvider";
 
-    public static final boolean VERBOSE_LOGGING = Log.isLoggable(TAG, Log.VERBOSE);
+    public static final boolean VERBOSE_LOGGING = true;//Log.isLoggable(TAG, Log.VERBOSE);
 
     /** Set true to enable detailed transaction logging. */
     public static final boolean ENABLE_TRANSACTION_LOG = false; // Don't submit with true.
