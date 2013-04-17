@@ -437,6 +437,11 @@ public class HanziToPinyin {
         token.source = letter;
         int offset = -1;
         int cmp;
+        if(character == 21999){
+          token.type = Token.PINYIN;
+          token.target = "EN";
+          return token;
+        }
         if (character < 256) {
             token.type = Token.LATIN;
             token.target = letter;
