@@ -3700,16 +3700,30 @@ public class ContactsProvider2 extends AbstractContactsProvider
         Cursor c = db.query(Tables.RAW_CONTACTS, new String[]{RawContacts._ID},
                 RawContacts.CONTACT_ID + "=?", mSelectionArgs1,
                 null, null, null);
+        boolean isLocal = false;
         try {
             while (c.moveToNext()) {
                 long rawContactId = c.getLong(0);
+                if(rawContactIsLocalPhone(rawContactId))
+                {
+                    deleteRawContact(rawContactId,contactId,true);
+                    isLocal = true;
+                }
+                else
+                {
                 markRawContactAsDeleted(db, rawContactId, callerIsSyncAdapter);
+                }
             }
         } finally {
             c.close();
         }
 
         mProviderStatusUpdateNeeded = true;
+        if(isLocal)
+        {
+            db.delete(Tables.CONTACTS, Contacts._ID + "=" + contactId, null);
+            return 1;
+        }
 
         return db.delete(Tables.CONTACTS, Contacts._ID + "=" + contactId, null);
     }
@@ -3754,6 +3768,18 @@ public class ContactsProvider2 extends AbstractContactsProvider
         Cursor c = db.query(Tables.RAW_CONTACTS, Projections.LITERAL_ONE,
                 RawContactsColumns.CONCRETE_ID + "=? AND " +
                 RawContactsColumns.ACCOUNT_ID + "=" + Clauses.LOCAL_ACCOUNT_ID,
+                new String[] {String.valueOf(rawContactId)}, null, null, null);
+        try {
+            return c.getCount() > 0;
+        } finally {
+            c.close();
+        }
+    }
+    private boolean rawContactIsLocalPhone(long rawContactId) {
+        final SQLiteDatabase db = mDbHelper.get().getReadableDatabase();
+        Cursor c = db.query(Tables.RAW_CONTACTS, Projections.LITERAL_ONE,
+                RawContactsColumns.CONCRETE_ID + "=? AND " +
+                RawContactsColumns.ACCOUNT_ID + "=" + Clauses.PHONE_ACCOUNT_ID,
                 new String[] {String.valueOf(rawContactId)}, null, null, null);
         try {
             return c.getCount() > 0;

@@ -307,6 +307,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                     AccountsColumns.ACCOUNT_NAME + " IS NULL AND " +
                     AccountsColumns.ACCOUNT_TYPE + " IS NULL AND " +
                     AccountsColumns.DATA_SET + " IS NULL)";
+        String PHONE_ACCOUNT_ID =
+                "(SELECT " + AccountsColumns._ID +
+                " FROM " + Tables.ACCOUNTS +
+                " WHERE " +
+                    AccountsColumns.ACCOUNT_TYPE + " = 'com.android.localphone' )";
 
         final String RAW_CONTACT_IS_LOCAL = RawContactsColumns.CONCRETE_ACCOUNT_ID
                 + "=" + LOCAL_ACCOUNT_ID;
