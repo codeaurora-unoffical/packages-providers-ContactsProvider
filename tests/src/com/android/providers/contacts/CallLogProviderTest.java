@@ -63,7 +63,8 @@ public class CallLogProviderTest extends BaseContactsProvider2Test {
             Voicemails.SOURCE_DATA,
             Voicemails.STATE};
     /** Total number of columns exposed by call_log provider. */
-    private static final int NUM_CALLLOG_FIELDS = 18;
+    // Add one column for subscription, change the number to 19.
+    private static final int NUM_CALLLOG_FIELDS = 19;
 
     @Override
     protected Class<? extends ContentProvider> getProviderClass() {
@@ -192,6 +193,31 @@ public class CallLogProviderTest extends BaseContactsProvider2Test {
         values.put(Calls.CACHED_NUMBER_LABEL, "Directory");
         values.put(Calls.COUNTRY_ISO, "us");
         values.put(Calls.GEOCODED_LOCATION, "usa");
+        assertStoredValues(uri, values);
+    }
+
+    // Caused by add one column to mark the call log state, so need add this function
+    // to test if it could add call for special subcription.
+    public void testAddCallForSub() {
+        CallerInfo ci = new CallerInfo();
+        ci.name = "1-800-GOOG-411";
+        ci.numberType = Phone.TYPE_CUSTOM;
+        ci.numberLabel = "Directory";
+        // Marked the call is for sub 1.
+        Uri uri = Calls.addCall(ci, getMockContext(), "1-800-263-7643",
+                PhoneConstants.PRESENTATION_ALLOWED, Calls.OUTGOING_TYPE, 2000, 40, 1);
+
+        ContentValues values = new ContentValues();
+        values.put(Calls.TYPE, Calls.OUTGOING_TYPE);
+        values.put(Calls.NUMBER, "1-800-263-7643");
+        values.put(Calls.DATE, 2000);
+        values.put(Calls.DURATION, 40);
+        values.put(Calls.CACHED_NAME, "1-800-GOOG-411");
+        values.put(Calls.CACHED_NUMBER_TYPE, Phone.TYPE_CUSTOM);
+        values.put(Calls.CACHED_NUMBER_LABEL, "Directory");
+        values.put(Calls.COUNTRY_ISO, "us");
+        values.put(Calls.GEOCODED_LOCATION, "usa");
+        values.put(Calls.SUBSCRIPTION, 1);
         assertStoredValues(uri, values);
     }
 

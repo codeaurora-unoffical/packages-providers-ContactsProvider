@@ -107,7 +107,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   700-799 Jelly Bean
      * </pre>
      */
-    static final int DATABASE_VERSION = 706;
+    static final int DATABASE_VERSION = 707;
 
     private static final String DATABASE_NAME = "contacts2.db";
     private static final String DATABASE_PRESENCE = "presence_db";
@@ -1247,7 +1247,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.MIME_TYPE + " TEXT," +
                 Voicemails.SOURCE_DATA + " TEXT," +
                 Voicemails.SOURCE_PACKAGE + " TEXT," +
-                Voicemails.STATE + " INTEGER" +
+                Voicemails.STATE + " INTEGER," +
+                Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0" +
         ");");
 
         // Voicemail source status table.
@@ -2396,6 +2397,13 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // which resulted in losing some of the rows from the stats table.
             rebuildSqliteStats = true;
             oldVersion = 706;
+        }
+
+        if (oldVersion < 707) {
+            // This version add one column to calls table which is used to save the subscription
+            // for the calls slot.
+            upgradeToVersion707(db);
+            oldVersion = 707;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -3797,6 +3805,16 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                         normalized,
                         PhoneNumberUtils.toCallerIDMinMatch(normalized)
                     });
+        }
+    }
+
+    private void upgradeToVersion707(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.CALLS
+                    + " ADD " + Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0;");
+        } catch (SQLException e) {
+            // Shouldn't be here unless we're debugging and interrupt the process.
+            Log.w(TAG, "Exception upgrading contacts2.db from 706 to 707 " + e);
         }
     }
 
