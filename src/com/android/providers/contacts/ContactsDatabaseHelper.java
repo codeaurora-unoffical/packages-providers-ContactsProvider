@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2009 The Android Open Source Project
- *
+ * Copyright (C) 2013 The Linux Foundation. All Rights Reserved.
+   Not a Contribution.
+
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -107,7 +109,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   700-799 Jelly Bean
      * </pre>
      */
-    static final int DATABASE_VERSION = 707;
+    static final int DATABASE_VERSION = 708;
 
     private static final String DATABASE_NAME = "contacts2.db";
     private static final String DATABASE_PRESENCE = "presence_db";
@@ -271,16 +273,16 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
          * Adds the "group_member_count column" to the query, which will be null if a group has
          * no members.  Use ifnull(group_member_count, 0) if 0 is needed instead.
          */
-        public static final String GROUP_MEMBER_COUNT =
-                " LEFT OUTER JOIN (SELECT "
-                        + "data.data1 AS member_count_group_id, "
-                        + "COUNT(data.raw_contact_id) AS group_member_count "
-                    + "FROM data "
-                    + "WHERE "
-                        + "data.mimetype_id = (SELECT _id FROM mimetypes WHERE "
-                            + "mimetypes.mimetype = '" + GroupMembership.CONTENT_ITEM_TYPE + "')"
-                    + "GROUP BY member_count_group_id) AS member_count_table" // End of inner query
-                + " ON (groups._id = member_count_table.member_count_group_id)";
+    public static final String GROUP_MEMBER_COUNT =
+            " LEFT OUTER JOIN (SELECT "
+            + "data.data1 AS member_count_group_id, "
+            + "COUNT(data.raw_contact_id) AS group_member_count "
+            + "FROM data , raw_contacts "
+            + "WHERE data.raw_contact_id = raw_contacts._id and raw_contacts.deleted != 1 and "
+            + "data.mimetype_id = (SELECT _id FROM mimetypes WHERE "
+            + "mimetypes.mimetype = '" + GroupMembership.CONTENT_ITEM_TYPE + "')"
+            + "GROUP BY member_count_group_id) AS member_count_table" // End of inner query
+            + " ON (groups._id = member_count_table.member_count_group_id)";
     }
 
     public interface Views {
@@ -460,6 +462,10 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String CONCRETE_ID = Tables.GROUPS + "." + BaseColumns._ID;
         public static final String CONCRETE_SOURCE_ID = Tables.GROUPS + "." + Groups.SOURCE_ID;
 
+        public static final String CONCRETE_ACCOUNT_NAME =
+                Tables.GROUPS + "." + Groups.ACCOUNT_NAME;
+        public static final String CONCRETE_ACCOUNT_TYPE =
+                Tables.GROUPS + "." + Groups.ACCOUNT_TYPE;
         public static final String ACCOUNT_ID = "account_id";
         public static final String CONCRETE_ACCOUNT_ID = Tables.GROUPS + "." + ACCOUNT_ID;
     }
@@ -1176,7 +1182,10 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Groups.SYNC1 + " TEXT, " +
                 Groups.SYNC2 + " TEXT, " +
                 Groups.SYNC3 + " TEXT, " +
-                Groups.SYNC4 + " TEXT " +
+                Groups.SYNC4 + " TEXT, " +
+                Groups.ACCOUNT_NAME + " STRING DEFAULT NULL, " +
+                Groups.ACCOUNT_TYPE + " STRING DEFAULT NULL " +
+
         ");");
 
         db.execSQL("CREATE INDEX groups_source_id_account_id_index ON " + Tables.GROUPS + " (" +
@@ -2404,6 +2413,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // for the calls slot.
             upgradeToVersion707(db);
             oldVersion = 707;
+        }
+
+        if (oldVersion < 708) {
+            //add two column of account info for groups
+            upgradeToVersion708(db);
+            oldVersion = 708;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -3816,6 +3831,13 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // Shouldn't be here unless we're debugging and interrupt the process.
             Log.w(TAG, "Exception upgrading contacts2.db from 706 to 707 " + e);
         }
+    }
+
+    private void upgradeToVersion708(SQLiteDatabase db) {
+        db.execSQL("ALTER TABLE " + Tables.GROUPS
+                + " ADD " + Groups.ACCOUNT_NAME + " STRING DEFAULT NULL;");
+        db.execSQL("ALTER TABLE " + Tables.GROUPS
+                + " ADD " + Groups.ACCOUNT_TYPE + " STRING DEFAULT NULL;");
     }
 
     public String extractHandleFromEmailAddress(String email) {
