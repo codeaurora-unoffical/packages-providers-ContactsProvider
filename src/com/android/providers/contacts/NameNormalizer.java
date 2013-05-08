@@ -46,7 +46,7 @@ public class NameNormalizer {
         }
         sCollatorLocale = locale;
 
-        sCachedCompressingCollator = (RuleBasedCollator) Collator.getInstance(locale);
+        sCachedCompressingCollator = (RuleBasedCollator) Collator.getInstance(Locale.US);
         sCachedCompressingCollator.setStrength(Collator.PRIMARY);
         sCachedCompressingCollator.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
 
