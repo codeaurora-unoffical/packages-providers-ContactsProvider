@@ -1278,13 +1278,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
     /* package */ static final String PROFILE_DB_TAG = "profile";
 
     /**
-     * The active (thread-local) database.  This will be switched between a contacts-specific
-     * database and a profile-specific database, depending on what the current operation is
-     * targeted to.
-     */
-    private final ThreadLocal<SQLiteDatabase> mActiveDb = new ThreadLocal<SQLiteDatabase>();
-
-    /**
      * The thread-local holder of the active transaction.  Shared between this and the profile
      * provider, to keep transactions on both databases synchronized.
      */
@@ -2649,7 +2642,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         String accountName = null;
         String accountType = null;
         try {
-            c = mActiveDb.get().query(Tables.RAW_CONTACTS, new String[] {
+            c = mDbHelper.get().getWritableDatabase().query(Tables.RAW_CONTACTS, new String[] {
                     RawContactsColumns.ACCOUNT_ID
             }, BaseColumns._ID + "=?",
                     new String[] {
@@ -2657,7 +2650,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                     }, null, null, null);
             if (c != null && c.moveToNext()) {
                 int accountId = c.getInt(0);
-                accountCursor = mActiveDb.get().query(
+                accountCursor = mDbHelper.get().getWritableDatabase().query(
                         Tables.ACCOUNTS,
                         new String[] { AccountsColumns.ACCOUNT_NAME,
                                 AccountsColumns.ACCOUNT_TYPE }, AccountsColumns._ID + "=?",
@@ -2761,7 +2754,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             values.put(Data.RAW_CONTACT_ID, rawContactId);
             values.put(Photo.PHOTO, data);
             values.put(Photo.IS_SUPER_PRIMARY, 1);
-            mActiveDb.get().insert(Tables.DATA, null, values);
+            mDbHelper.get().getWritableDatabase().insert(Tables.DATA, null, values);
         }
     }
 
@@ -4725,6 +4718,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
         final ContactsDatabaseHelper dbHelper = mDbHelper.get();
         final SQLiteDatabase db = dbHelper.getWritableDatabase();
+
         db.beginTransaction();
 
         // WARNING: This method can be run in either contacts mode or profile mode.  It is
@@ -4941,6 +4935,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
         // Otherwise proceed with a normal query against the contacts DB.
         switchToContactMode();
+
         String directory = getQueryParameter(uri, ContactsContract.DIRECTORY_PARAM_KEY);
         if (directory == null) {
             return addSnippetExtrasToCursor(uri,
@@ -7236,7 +7231,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         Cursor c = null;
         long[] accountId = null;
         try {
-            c = mActiveDb.get().query(Tables.ACCOUNTS, new String[] {
+            c = mDbHelper.get().getWritableDatabase().query(Tables.ACCOUNTS, new String[] {
                     AccountsColumns._ID
             }, AccountsColumns.ACCOUNT_TYPE + "=?",
                     new String[] {
