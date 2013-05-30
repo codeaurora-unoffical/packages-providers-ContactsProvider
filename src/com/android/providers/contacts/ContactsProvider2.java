@@ -2045,7 +2045,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             response.putParcelable(Authorization.KEY_AUTHORIZED_URI, authUri);
             return response;
         }
-        return null;
+        return super.call(method, arg, extras);
     }
 
     /**

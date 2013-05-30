@@ -25,6 +25,7 @@ import android.content.OperationApplicationException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteTransactionListener;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -100,7 +101,8 @@ public abstract class AbstractContactsProvider extends ContentProvider
      * See also the TODO on {@link #mSerializeOnDbHelper}.
      */
     private SQLiteTransactionListener mSerializedDbTransactionListener;
-
+	
+    private boolean mNotifyForbidden = false;
     @Override
     public boolean onCreate() {
         Context context = getContext();
@@ -128,6 +130,55 @@ public abstract class AbstractContactsProvider extends ContentProvider
     public ContactsTransaction getCurrentTransaction() {
         return mTransactionHolder.get();
     }
+
+    @Override
+    public Bundle call(String method, String request, Bundle args) {
+        Log.i("AbstractContactsProvider","call contentprovider method:" + method);
+        if(method.equals("enableTransactionLock"))
+        {
+           enableTransactionLock();     
+        }
+        if(method.equals("disableTransactionLock"))
+        {
+            disableTransactionLock();
+        }
+        return args;
+    }
+    
+    public int enableTransactionLock() {
+    /*
+        mTransactionLockDb = mOpenHelper.getWritableDatabase();
+        if (null != mTransactionLockDb)
+        {
+            mTransactionLockDb.beginTransaction();
+        }
+        mIsTransactionLock = true;
+        */
+        mNotifyForbidden = true;
+        return 1;
+    }
+
+    
+    public int disableTransactionLock() {
+    /*
+        if (null != mTransactionLockDb)
+        {
+            try {
+                mTransactionLockDb.setTransactionSuccessful();
+            } finally {
+                mTransactionLockDb.endTransaction();
+            }
+            mTransactionLockDb = null;
+        }
+        mIsTransactionLock = false;
+        */
+        mNotifyForbidden = false;
+        notifyChange();
+        return 1;
+    }
+
+
+
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
@@ -280,7 +331,8 @@ public abstract class AbstractContactsProvider extends ContentProvider
         if (transaction != null && (!transaction.isBatch() || callerIsBatch)) {
             try {
                 if (transaction.isDirty()) {
-                    notifyChange();
+                    if (!mNotifyForbidden) 
+                        notifyChange();
                 }
                 transaction.finish(callerIsBatch);
             } finally {
