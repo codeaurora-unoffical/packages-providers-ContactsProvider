@@ -347,7 +347,11 @@ public class ContactDirectoryManager {
             if (DEBUG) Log.d(TAG, "Ignoring onPackageChanged for self");
             return;
         }
-        updateDirectoriesForPackage(packageInfo, false);
+        try {
+            updateDirectoriesForPackage(packageInfo, false);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
