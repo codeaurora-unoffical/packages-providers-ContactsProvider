@@ -46,6 +46,7 @@ import android.database.MatrixCursor;
 import android.database.MatrixCursor.RowBuilder;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDoneException;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -5010,7 +5011,9 @@ public class ContactsProvider2 extends AbstractContactsProvider
     }
 
     private Cursor addSnippetExtrasToCursor(Uri uri, Cursor cursor) {
-
+        if(cursor == null) {
+            return null;
+        }
         // If the cursor doesn't contain a snippet column, don't bother wrapping it.
         if (cursor.getColumnIndex(SearchSnippetColumns.SNIPPET) < 0) {
             return cursor;
@@ -6294,8 +6297,13 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 && BaseColumns._COUNT.equals(projection[0])) {
             qb.setProjectionMap(sCountProjectionMap);
         }
-        final Cursor c = qb.query(db, projection, selection, selectionArgs, groupBy, having,
-                sortOrder, limit, cancellationSignal);
+        Cursor c = null;
+        try {
+            c = qb.query(db, projection, selection, selectionArgs, groupBy, having,
+                    sortOrder, limit, cancellationSignal);
+        } catch (SQLiteException ex) {
+            Log.d(TAG,"[query] catch SQLiteException:" + ex);
+        }
         if (c != null) {
             c.setNotificationUri(getContext().getContentResolver(), ContactsContract.AUTHORITY_URI);
         }
