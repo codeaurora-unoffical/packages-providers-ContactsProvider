@@ -1966,8 +1966,8 @@ public class LegacyApiSupport {
             
             sb.append(" ( "+Groups.ACCOUNT_NAME + " IS NULL" +
                     " AND " + Groups.ACCOUNT_TYPE + " IS NULL )"
-                    +" OR ( "+Groups.ACCOUNT_NAME + " = " + "PHONE"
-                    +" AND " + Groups.ACCOUNT_TYPE + " = " + "com.android.localphone"
+                    +" OR ( "+Groups.ACCOUNT_NAME + " = " + "'PHONE'"
+                    +" AND " + Groups.ACCOUNT_TYPE + " = " + "'com.android.localphone'"
                     +" ) ");
         }
     }
