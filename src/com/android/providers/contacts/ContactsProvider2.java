@@ -848,6 +848,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .addAll(sDataColumns)
             .addAll(sDataPresenceColumns)
             .addAll(sContactsColumns)
+            .addAll(sRawContactColumns)
             .addAll(sContactPresenceColumns)
             .build();
 
