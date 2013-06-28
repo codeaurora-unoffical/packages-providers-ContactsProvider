@@ -2538,14 +2538,19 @@ public class ContactsProvider2 extends AbstractContactsProvider
         mValues.putAll(values);
         mValues.putNull(RawContacts.CONTACT_ID);
         if (!mapsToProfileDb(uri)) {
-	        if (!mValues.containsKey(RawContacts.ACCOUNT_NAME)
-	            || (mValues.containsKey(RawContacts.ACCOUNT_NAME)
-	               && TextUtils.isEmpty(mValues.getAsString(RawContacts.ACCOUNT_NAME))))
-	        {
-	            mValues.put(RawContacts.ACCOUNT_NAME, "PHONE");
-	            mValues.put(RawContacts.ACCOUNT_TYPE, "com.android.localphone");
-	        }
-	      }
+            
+            String accountName = getQueryParameter(uri, RawContacts.ACCOUNT_NAME);
+            final boolean includeAccount = !TextUtils.isEmpty(accountName);
+            if(!includeAccount) {
+                if (!mValues.containsKey(RawContacts.ACCOUNT_NAME)
+                    || (mValues.containsKey(RawContacts.ACCOUNT_NAME)
+                       && TextUtils.isEmpty(mValues.getAsString(RawContacts.ACCOUNT_NAME))))
+                {
+                    mValues.put(RawContacts.ACCOUNT_NAME, "PHONE");
+                    mValues.put(RawContacts.ACCOUNT_TYPE, "com.android.localphone");
+                }
+            }
+        }
         AccountWithDataSet accountWithDataSet = resolveAccountWithDataSet(uri, mValues);
         final long accountId = resolveAccountIdInTransaction(uri, mValues);
         mValues.remove(RawContacts.ACCOUNT_NAME);
