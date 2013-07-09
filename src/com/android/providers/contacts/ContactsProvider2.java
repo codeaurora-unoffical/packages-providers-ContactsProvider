@@ -7268,7 +7268,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         if ("true".equals(withoutSim)) {
             final long[] accountId = getAccountIdWithoutSim(uri);
 
-            if (accountId == null) {
+            if (null == accountId || 0 == accountId.length) {
                 // No such account.
                 sb.setLength(0);
                 sb.append("(1=2)");
