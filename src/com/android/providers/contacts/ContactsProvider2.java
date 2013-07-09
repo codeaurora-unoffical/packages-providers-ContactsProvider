@@ -5618,22 +5618,53 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 String filter = uri.getQueryParameter("filter");
                 if(TextUtils.isEmpty(filter)) break;
 
-                String querySelect = "view_contacts JOIN (SELECT raw_contact_id, "
-                    + "normalized_number, data_id FROM phone_lookup WHERE normalized='0')"
-                    + " ON (name_raw_contact_id=raw_contact_id) "
-                    + " LEFT OUTER JOIN agg_presence ON (_id = agg_presence.presence_contact_id)"
-                    + " LEFT OUTER JOIN status_updates contacts_status_updates"
-                    + " ON (status_update_id=contacts_status_updates.status_update_data_id) "
-                    + " WHERE (_id IN (SELECT contact_id FROM search_index WHERE name_digit like '"
-                    + filter
-                    + "%' or name_digit like '% "
-                    + filter
-                    + "%')"
-                    + " or normalized_number like '%"
-                    + filter
-                    + "%') AND normalized_number is not null AND _id IN default_directory "
-                    + "order by view_contacts.last_time_contacted desc";
+                String querySelect = null;
+                String querySelect1 = "view_contacts JOIN (SELECT raw_contact_id, "
+                        + "normalized_number, data_id FROM phone_lookup WHERE normalized='0'";
+                String querySelect2 =
+                        ") ON (name_raw_contact_id=raw_contact_id) "
+                        + " LEFT OUTER JOIN agg_presence ON (_id ="
+                        + " agg_presence.presence_contact_id)"
+                        + " LEFT OUTER JOIN status_updates contacts_status_updates"
+                        + " ON (status_update_id=contacts_status_updates.status_update_data_id) "
+                        + " WHERE (_id IN (SELECT contact_id FROM search_index"
+                        + " WHERE name_digit like '"
+                        + filter
+                        + "%' or name_digit like '% "
+                        + filter
+                        + "%')"
+                        + " or normalized_number like '%"
+                        + filter
+                        + "%') AND normalized_number is not null AND _id IN default_directory "
+                        + "order by view_contacts.last_time_contacted desc";
+                String withoutSim = getQueryParameter(uri, WITHOUT_SIM_FLAG);
+                if ("true".equals(withoutSim)) {
+                    final StringBuilder sb = new StringBuilder();
+                    final long[] accountId = getAccountIdWithoutSim(uri);
 
+                    if (null == accountId || 0 == accountId.length) {
+                        // No such account.
+                        sb.setLength(0);
+                        sb.append("(1=2)");
+                    } else {
+                        sb.append(
+                                "(raw_contact_id not IN (" +
+                                        "SELECT " + RawContacts._ID + " FROM "
+                                        + Tables.RAW_CONTACTS +
+                                        " WHERE " + RawContacts.CONTACT_ID + " not NULL AND ( ");
+                        for (int i = 0; i < accountId.length; i++) {
+                            sb.append(RawContactsColumns.ACCOUNT_ID + "="
+                                + accountId[i]);
+                            if (i != accountId.length-1) {
+                                sb.append(" OR ");
+                            }
+                        }
+                        sb.append(")))");
+                        querySelect = querySelect1 + " AND " + sb.toString() + querySelect2;
+                    }
+                } else {
+                    querySelect = querySelect1 + querySelect2;
+                }
                 qb.setTables(querySelect);
                 qb.setProjectionMap(SMARTR_DIALER_FILTER_PROJECTION);
                 break;
