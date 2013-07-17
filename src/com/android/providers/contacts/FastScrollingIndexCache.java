@@ -105,7 +105,11 @@ public class FastScrollingIndexCache {
      */
     private static void appendIfNotNull(StringBuilder sb, Object value) {
         if (value != null) {
+        try {
             sb.append(value.toString());
+            } catch (RuntimeException e) {
+            Log.w(TAG, "Error happened when append string : ", e);
+            }
         }
     }
 
