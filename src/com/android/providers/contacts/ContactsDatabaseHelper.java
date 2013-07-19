@@ -113,7 +113,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   700-799 Jelly Bean
      * </pre>
      */
-    static final int DATABASE_VERSION = 710;
+    static final int DATABASE_VERSION = 711;
 
     private static final String DATABASE_NAME = "contacts2.db";
     private static final String DATABASE_PRESENCE = "presence_db";
@@ -1276,6 +1276,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.SOURCE_DATA + " TEXT," +
                 Voicemails.SOURCE_PACKAGE + " TEXT," +
                 Voicemails.STATE + " INTEGER" +
+                Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0" +
         ");");
 
         // Voicemail source status table.
@@ -2479,6 +2480,13 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             upgradeToVersion710(db);
             upgradeViewsAndTriggers = true;
             oldVersion = 710;
+        }
+
+        if (oldVersion < 711) {
+            // This version add one column to calls table which is used to save
+            // the subscription for the calls slot.
+            upgradeToVersion711(db);
+            oldVersion = 711;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -3964,6 +3972,15 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
 
         db.execSQL("CREATE INDEX deleted_contacts_contact_deleted_timestamp_index "
                 + "ON deleted_contacts(contact_deleted_timestamp)");
+    }
+
+    private void upgradeToVersion711(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.CALLS
+                    + " ADD " + Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0;");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 706 to 707 " + e);
+        }
     }
 
     public String extractHandleFromEmailAddress(String email) {
