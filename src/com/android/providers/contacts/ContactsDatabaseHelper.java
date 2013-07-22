@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2009 The Android Open Source Project
- *
+ * Copyright (C) 2013 The Linux Foundation. All Rights Reserved.
+    Not a Contribution.
+
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -113,7 +115,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   700-799 Jelly Bean
      * </pre>
      */
-    static final int DATABASE_VERSION = 711;
+    static final int DATABASE_VERSION = 712;
 
     private static final String DATABASE_NAME = "contacts2.db";
     private static final String DATABASE_PRESENCE = "presence_db";
@@ -282,8 +284,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 " LEFT OUTER JOIN (SELECT "
                         + "data.data1 AS member_count_group_id, "
                         + "COUNT(data.raw_contact_id) AS group_member_count "
-                    + "FROM data "
-                    + "WHERE "
+                    + "FROM data , raw_contacts "
+                    + "WHERE data.raw_contact_id = raw_contacts._id and raw_contacts.deleted != 1 and "
                         + "data.mimetype_id = (SELECT _id FROM mimetypes WHERE "
                             + "mimetypes.mimetype = '" + GroupMembership.CONTENT_ITEM_TYPE + "')"
                     + "GROUP BY member_count_group_id) AS member_count_table" // End of inner query
@@ -483,6 +485,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
 
         public static final String ACCOUNT_ID = "account_id";
         public static final String CONCRETE_ACCOUNT_ID = Tables.GROUPS + "." + ACCOUNT_ID;
+
+        public static final String CONCRETE_ACCOUNT_NAME =
+            Tables.GROUPS + "." + Groups.ACCOUNT_NAME;
+        public static final String CONCRETE_ACCOUNT_TYPE =
+            Tables.GROUPS + "." + Groups.ACCOUNT_TYPE;
     }
 
     public interface ViewGroupsColumns {
@@ -1205,6 +1212,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Groups.SYNC2 + " TEXT, " +
                 Groups.SYNC3 + " TEXT, " +
                 Groups.SYNC4 + " TEXT " +
+                Groups.ACCOUNT_NAME + " STRING DEFAULT NULL, " +
+                Groups.ACCOUNT_TYPE + " STRING DEFAULT NULL " +
         ");");
 
         db.execSQL("CREATE INDEX groups_source_id_account_id_index ON " + Tables.GROUPS + " (" +
@@ -2487,6 +2496,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // the subscription for the calls slot.
             upgradeToVersion711(db);
             oldVersion = 711;
+        }
+
+        if (oldVersion < 712) {
+            //add two column of account info for groups
+            upgradeToVersion712(db);
+            oldVersion = 712;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -3979,9 +3994,21 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Tables.CALLS
                     + " ADD " + Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0;");
         } catch (SQLException e) {
-            Log.w(TAG, "Exception upgrading contacts2.db from 706 to 707 " + e);
+            Log.w(TAG, "Exception upgrading contacts2.db from 710 to 711 " + e);
         }
     }
+
+    private void upgradeToVersion712(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.GROUPS
+                    + " ADD " + Groups.ACCOUNT_NAME + " STRING DEFAULT NULL;");
+            db.execSQL("ALTER TABLE " + Tables.GROUPS
+                    + " ADD " + Groups.ACCOUNT_TYPE + " STRING DEFAULT NULL;");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 711 to 712 " + e);
+        }
+    }
+
 
     public String extractHandleFromEmailAddress(String email) {
         Rfc822Token[] tokens = Rfc822Tokenizer.tokenize(email);
