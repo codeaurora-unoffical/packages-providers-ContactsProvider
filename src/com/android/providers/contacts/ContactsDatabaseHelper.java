@@ -115,7 +115,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   700-799 Jelly Bean
      * </pre>
      */
-    static final int DATABASE_VERSION = 712;
+    static final int DATABASE_VERSION = 713;
 
     private static final String DATABASE_NAME = "contacts2.db";
     private static final String DATABASE_PRESENCE = "presence_db";
@@ -1284,8 +1284,9 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.MIME_TYPE + " TEXT," +
                 Voicemails.SOURCE_DATA + " TEXT," +
                 Voicemails.SOURCE_PACKAGE + " TEXT," +
-                Voicemails.STATE + " INTEGER" +
-                Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0" +
+                Voicemails.STATE + " INTEGER," +
+                Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0," +
+                Calls.DURATION_TYPE + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE +
         ");");
 
         // Voicemail source status table.
@@ -2502,6 +2503,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             //add two column of account info for groups
             upgradeToVersion712(db);
             oldVersion = 712;
+        }
+
+        if (oldVersion < 713) {
+            //add the type of call duration
+            upgradeToVersion713(db);
+            oldVersion = 713;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -4009,6 +4016,14 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    private void upgradeToVersion713(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + Calls.DURATION_TYPE
+                    + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE + ";");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 712 to 713 " + e);
+        }
+    }
 
     public String extractHandleFromEmailAddress(String email) {
         Rfc822Token[] tokens = Rfc822Tokenizer.tokenize(email);
