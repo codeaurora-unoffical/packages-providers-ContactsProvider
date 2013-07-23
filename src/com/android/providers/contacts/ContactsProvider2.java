@@ -2627,7 +2627,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         if (rawContactId != -1) {
             insertSimPhoto(accountWithDataSet, rawContactId);
         }
-        int aggregationMode = RawContacts.AGGREGATION_MODE_DEFAULT;
+        int aggregationMode = RawContacts.AGGREGATION_MODE_SUSPENDED;
         if (mValues.containsKey(RawContacts.AGGREGATION_MODE)) {
             aggregationMode = mValues.getAsInteger(RawContacts.AGGREGATION_MODE);
         }
