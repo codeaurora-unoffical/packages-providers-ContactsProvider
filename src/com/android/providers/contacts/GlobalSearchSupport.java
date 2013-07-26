@@ -234,7 +234,7 @@ public class GlobalSearchSupport {
             sb.append(", " + SearchSnippetColumns.SNIPPET);
         }
         sb.append(" FROM ");
-        sb.append(Views.CONTACTS);
+        sb.append(getDatabaseHelper().getContactView(false));
         sb.append(" AS contacts");
         if (haveFilter) {
             mContactsProvider.appendSearchIndexJoin(sb, filter, true,
@@ -268,6 +268,10 @@ public class GlobalSearchSupport {
             c.close();
         }
         return cursor;
+    }
+
+    private ContactsDatabaseHelper getDatabaseHelper() {
+        return (ContactsDatabaseHelper) mContactsProvider.getDatabaseHelper();
     }
 
     private String shortenSnippet(final String snippet) {

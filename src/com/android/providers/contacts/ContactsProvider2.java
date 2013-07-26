@@ -783,6 +783,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add(RawContacts._ID)
             .add(RawContacts.CONTACT_ID)
             .add(RawContacts.Entity.DATA_ID)
+            .add(RawContacts.IS_RESTRICTED)
             .add(RawContacts.DELETED)
             .add(RawContacts.STARRED)
             .add(RawContacts.RAW_CONTACT_IS_USER_PROFILE)
@@ -799,6 +800,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add(Contacts.Entity.DATA_ID)
             .add(Contacts.Entity.NAME_RAW_CONTACT_ID)
             .add(Contacts.Entity.DELETED)
+            .add(Contacts.Entity.IS_RESTRICTED)
             .add(Contacts.IS_USER_PROFILE)
             .addAll(sContactsColumns)
             .addAll(sContactPresenceColumns)
@@ -3268,6 +3270,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 mSelectionArgs.add(values.getAsString(StatusUpdates.DATA_ID));
             }
         }
+        mSb.append(" AND ").append(getContactsRestrictions());
 
         Cursor cursor = null;
         try {
@@ -4305,7 +4308,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
         int count = 0;
         final SQLiteDatabase db = mDbHelper.get().getWritableDatabase();
-        Cursor cursor = db.query(Views.RAW_CONTACTS,
+        Cursor cursor = db.query(mDbHelper.get().getRawContactView(),
                 Projections.ID, selection,
                 selectionArgs, null, null, null);
         try {
@@ -4512,7 +4515,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         int count = 0;
         final SQLiteDatabase db = mDbHelper.get().getWritableDatabase();
 
-        Cursor cursor = db.query(Views.CONTACTS,
+        Cursor cursor = db.query(mDbHelper.get().getContactView(),
                 new String[] { Contacts._ID }, selection, selectionArgs, null, null, null);
         try {
             while (cursor.moveToNext()) {
@@ -4558,7 +4561,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 + " AND " + RawContacts.RAW_CONTACT_IS_READ_ONLY + "=0", mSelectionArgs1);
 
         if (mValues.containsKey(RawContacts.STARRED) && !callerIsSyncAdapter) {
-            Cursor cursor = db.query(Views.RAW_CONTACTS,
+            Cursor cursor = db.query(mDbHelper.get().getRawContactView(),
                     new String[] { RawContacts._ID }, RawContacts.CONTACT_ID + "=?",
                     mSelectionArgs1, null, null, null);
             try {
@@ -5160,6 +5163,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
         // The expression used in bundleLetterCountExtras() to get count.
         String addressBookIndexerCountExpression = null;
 
+        // TODO: Consider writing a test case for RestrictionExceptions when you
+        // write a new query() block to make sure it protects restricted data.
         final int match = sUriMatcher.match(uri);
         Log.i(TAG, "uri=" + uri + " selection=" + selection + " match=" + match);
         if(selectionArgs != null) {
@@ -5300,7 +5305,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             case CONTACTS_AS_VCARD: {
                 final String lookupKey = Uri.encode(uri.getPathSegments().get(2));
                 long contactId = lookupContactIdByLookupKey(db, lookupKey);
-                qb.setTables(Views.CONTACTS);
+                qb.setTables(mDbHelper.get().getContactView(true /* require restricted */));
                 qb.setProjectionMap(sContactsVCardProjectionMap);
                 selectionArgs = insertSelectionArg(selectionArgs,
                         String.valueOf(contactId));
@@ -5339,7 +5344,10 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 // appendLocalDirectoryAndAccountSelectionIfNeeded()
                 // with account filtration together, so we remove the codes in
                 // the setTablesAndProjectionMapForContactsWithSnippet() method.
-                appendLocalDirectoryAndAccountSelectionIfNeeded(qb, directoryId, uri);
+                String withoutSim = getQueryParameter(uri, WITHOUT_SIM_FLAG);
+                if("true".equals(withoutSim)){
+                    appendLocalDirectoryAndAccountSelectionIfNeeded(qb, directoryId, uri);
+                }
                 break;
             }
 
@@ -5509,7 +5517,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
             }
 
             case PROFILE_AS_VCARD: {
-                qb.setTables(Views.CONTACTS);
+                // When reading as vCard always use restricted view
+                qb.setTables(mDbHelper.get().getContactView(true /* require restricted */));
                 qb.setProjectionMap(sContactsVCardProjectionMap);
                 break;
             }
@@ -6100,14 +6109,14 @@ public class ContactsProvider2 extends AbstractContactsProvider
             }
 
             case GROUPS: {
-                qb.setTables(Views.GROUPS);
+                qb.setTables(mDbHelper.get().getGroupView());
                 qb.setProjectionMap(sGroupsProjectionMap);
                 appendAccountIdFromParameter(qb, uri);
                 break;
             }
 
             case GROUPS_ID: {
-                qb.setTables(Views.GROUPS);
+                qb.setTables(mDbHelper.get().getGroupView());
                 qb.setProjectionMap(sGroupsProjectionMap);
                 selectionArgs = insertSelectionArg(selectionArgs, uri.getLastPathSegment());
                 qb.appendWhere(Groups._ID + "=?");
@@ -6115,7 +6124,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             }
 
             case GROUPS_SUMMARY: {
-                String tables = Views.GROUPS + " AS " + Tables.GROUPS;
+                String tables = mDbHelper.get().getGroupView() + " AS " + Tables.GROUPS;
                 if (ContactsDatabaseHelper.isInProjection(projection, Groups.SUMMARY_COUNT)) {
                     tables = tables + Joins.GROUP_MEMBER_COUNT;
                 }
@@ -6808,7 +6817,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
             sb.append(" INNER JOIN ");
         }
 
-        sb.append(Views.CONTACTS);
+        String viewName = mDbHelper.get().getContactView(shouldExcludeRestrictedData(uri));
+        sb.append(viewName);
 
         // Just for frequently contacted contacts in Strequent Uri handling.
         if (includeDataUsageStat) {
@@ -6833,7 +6843,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             String[] projection, String filter, long directoryId, boolean deferSnippeting) {
 
         StringBuilder sb = new StringBuilder();
-        sb.append(Views.CONTACTS);
+        sb.append(mDbHelper.get().getContactView(shouldExcludeRestrictedData(uri)));
 
         if (filter != null) {
             filter = filter.trim();
@@ -7054,14 +7064,14 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
     private void setTablesAndProjectionMapForRawContacts(SQLiteQueryBuilder qb, Uri uri) {
         StringBuilder sb = new StringBuilder();
-        sb.append(Views.RAW_CONTACTS);
+        sb.append(mDbHelper.get().getRawContactView(shouldExcludeRestrictedData(uri)));
         qb.setTables(sb.toString());
         qb.setProjectionMap(sRawContactsProjectionMap);
         appendAccountIdFromParameter(qb, uri);
     }
 
     private void setTablesAndProjectionMapForRawEntities(SQLiteQueryBuilder qb, Uri uri) {
-        qb.setTables(Views.RAW_ENTITIES);
+        qb.setTables(mDbHelper.get().getRawEntitiesView(shouldExcludeRestrictedData(uri)));
         qb.setProjectionMap(sRawEntityProjectionMap);
         appendAccountIdFromParameter(qb, uri);
     }
@@ -7088,7 +7098,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private void setTablesAndProjectionMapForData(SQLiteQueryBuilder qb, Uri uri,
             String[] projection, boolean distinct, boolean addSipLookupColumns, Integer usageType) {
         StringBuilder sb = new StringBuilder();
-        sb.append(Views.DATA);
+        sb.append(mDbHelper.get().getDataView(shouldExcludeRestrictedData(uri)));
         sb.append(" data");
 
         appendContactPresenceJoin(sb, projection, RawContacts.CONTACT_ID);
@@ -7121,7 +7131,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private void setTableAndProjectionMapForStatusUpdates(SQLiteQueryBuilder qb,
             String[] projection) {
         StringBuilder sb = new StringBuilder();
-        sb.append(Views.DATA);
+        sb.append(mDbHelper.get().getDataView());
         sb.append(" data");
         appendDataPresenceJoin(sb, projection, DataColumns.CONCRETE_ID);
         appendDataStatusUpdateJoin(sb, projection, DataColumns.CONCRETE_ID);
@@ -7152,7 +7162,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private void setTablesAndProjectionMapForEntities(SQLiteQueryBuilder qb, Uri uri,
             String[] projection) {
         StringBuilder sb = new StringBuilder();
-        sb.append(Views.ENTITIES);
+        sb.append(mDbHelper.get().getEntitiesView(shouldExcludeRestrictedData(uri)));
         sb.append(" data");
 
         appendContactPresenceJoin(sb, projection, Contacts.Entity.CONTACT_ID);
@@ -7241,6 +7251,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 sb.setLength(0);
                 sb.append("(1)");
             } else {
+                    final Long simAccountId = getSimAccountId();
+                    boolean noSimAccount = true;
                     sb.append(
                             " AND (" + Contacts._ID + " not IN (" +
                                     "SELECT " + RawContacts.CONTACT_ID + " FROM "
@@ -7249,10 +7261,16 @@ public class ContactsProvider2 extends AbstractContactsProvider
                     for (int i = 0; i < accountId.length; i++) {
                         sb.append(RawContactsColumns.ACCOUNT_ID + "="
                                 + accountId[i]);
+                        if (simAccountId == accountId[i]) {
+                            noSimAccount = false;
+                        }
                         if(i != accountId.length-1){
                             sb.append(" OR ");
                         }
-                }
+                    }
+                    if (noSimAccount) {
+                        sb.append(" OR "+RawContactsColumns.ACCOUNT_ID + " = "+simAccountId);
+                    }
                     sb.append(")))");
             }
         }
@@ -7277,6 +7295,25 @@ public class ContactsProvider2 extends AbstractContactsProvider
             }
         }
         qb.appendWhere(sb.toString());
+    }
+    
+    private long getSimAccountId() {
+        long simId = 0;
+        Cursor c = null;
+        try {
+            c = mDbHelper.get().getReadableDatabase().query(Tables.ACCOUNTS,
+                    new String[] { AccountsColumns._ID },
+                    AccountsColumns.ACCOUNT_TYPE + " =?", new String[] { ACCOUNT_TYPE_SIM },
+                    null, null, null);
+            if (c != null && c.moveToFirst()) {
+                simId = c.getLong(0);
+            }
+            return simId;
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+        }
     }
 
     private String appendLocalAccountSelectionIfNeeded(Uri uri) {
@@ -7329,6 +7366,23 @@ public class ContactsProvider2 extends AbstractContactsProvider
             //}
             return null;
         }
+    }
+    
+    private boolean shouldExcludeRestrictedData(Uri uri) {
+        // Note: currently, "export only" equals to "restricted", but may not in the future.
+        boolean excludeRestrictedData = readBooleanQueryParameter(uri,
+                Data.FOR_EXPORT_ONLY, false);
+        if (excludeRestrictedData) {
+            return true;
+        }
+
+        String requestingPackage = getQueryParameter(uri,
+                ContactsContract.REQUESTING_PACKAGE_PARAM_KEY);
+        if (requestingPackage != null) {
+            return !mDbHelper.get().hasAccessToRestrictedData(requestingPackage);
+        }
+
+        return false;
     }
 
     private void appendAccountFromParameter(SQLiteQueryBuilder qb, Uri uri) {
@@ -7511,6 +7565,23 @@ public class ContactsProvider2 extends AbstractContactsProvider
         } catch (NumberFormatException ex) {
             Log.w(TAG, "Invalid limit parameter: " + limitParam);
             return null;
+        }
+    }
+
+    String getContactsRestrictions() {
+        if (mDbHelper.get().hasAccessToRestrictedData()) {
+            return "1";
+        } else {
+            return RawContactsColumns.CONCRETE_IS_RESTRICTED + "=0";
+        }
+    }
+
+    public String getContactsRestrictionExceptionAsNestedQuery(String contactIdColumn) {
+        if (mDbHelper.get().hasAccessToRestrictedData()) {
+            return "1";
+        } else {
+            return "(SELECT " + RawContacts.IS_RESTRICTED + " FROM " + Tables.RAW_CONTACTS
+                    + " WHERE " + RawContactsColumns.CONCRETE_ID + "=" + contactIdColumn + ")=0";
         }
     }
 
@@ -7780,7 +7851,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         }
 
         String sql =
-                "SELECT " + Photo.PHOTO + " FROM " + Views.DATA +
+                "SELECT " + Photo.PHOTO + " FROM " + mDbHelper.get().getDataView() +
                 " WHERE " + selection;
         try {
             return makeAssetFileDescriptor(
