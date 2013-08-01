@@ -34,12 +34,16 @@ import com.android.providers.contacts.ContactsDatabaseHelper.MimetypesColumns;
 import com.android.providers.contacts.ContactsDatabaseHelper.RawContactsColumns;
 import com.android.providers.contacts.ContactsDatabaseHelper.SearchIndexColumns;
 import com.android.providers.contacts.ContactsDatabaseHelper.Tables;
+import com.android.providers.contacts.HanziToPinyin.Token;
 import com.google.android.collect.Lists;
 import com.google.common.annotations.VisibleForTesting;
 
+import java.text.Collator;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -74,6 +78,7 @@ public class SearchIndexManager {
 
         private StringBuilder mSbContent = new StringBuilder();
         private StringBuilder mSbName = new StringBuilder();
+        private StringBuilder mSbNameDigit = new StringBuilder();
         private StringBuilder mSbTokens = new StringBuilder();
         private StringBuilder mSbElementContent = new StringBuilder();
         private HashSet<String> mUniqueElements = new HashSet<String>();
@@ -87,6 +92,7 @@ public class SearchIndexManager {
             mSbContent.setLength(0);
             mSbTokens.setLength(0);
             mSbName.setLength(0);
+            mSbNameDigit.setLength(0);
             mSbElementContent.setLength(0);
             mUniqueElements.clear();
         }
@@ -97,6 +103,10 @@ public class SearchIndexManager {
 
         public String getName() {
             return mSbName.length() == 0 ? null : mSbName.toString();
+        }
+
+        public String getNameDigit() {
+            return mSbNameDigit.length() == 0 ? null : mSbNameDigit.toString();
         }
 
         public String getTokens() {
@@ -220,6 +230,59 @@ public class SearchIndexManager {
             }
         }
 
+        private String getNumberFromChar(char c) {
+            if (c >= 'a' && c <= 'c') {
+                return "2";
+            } else if (c >= 'd' && c <= 'f') {
+                return "3";
+            } else if (c >= 'g' && c <= 'i') {
+                return "4";
+            } else if (c >= 'j' && c <= 'l') {
+                return "5";
+            } else if (c >= 'm' && c <= 'o') {
+                return "6";
+            } else if (c >= 'p' && c <= 's') {
+                return "7";
+            } else if (c >= 't' && c <= 'v') {
+                return "8";
+            } else if (c >= 'w' && c <= 'z') {
+                return "9";
+            } else if ('0' <= c && c <= '9') {
+                return "" + c;
+            } else {
+                return " ";
+            }
+        }
+
+        private String getNameNumber(String name){
+            String number = "";
+            String nameLow = name.toLowerCase();
+            for(int i=0;i<nameLow.length();i++){
+                char c = nameLow.charAt(i);
+                number = number + getNumberFromChar(c);
+            }
+            return number;
+        }
+
+        public String getFullPinYin(String source) {
+            if (!Arrays.asList(Collator.getAvailableLocales()).contains(Locale.CHINA)) {
+                return source;
+            }
+            ArrayList<Token> tokens = HanziToPinyin.getInstance().get(source);
+            if (tokens == null || tokens.size() == 0) {
+                return source;
+            }
+            StringBuffer result = new StringBuffer();
+            for (Token token : tokens) {
+                if (token.type == Token.PINYIN) {
+                    result.append(token.target);
+                } else {
+                    result.append(token.source);
+                }
+            }
+            return result.toString();
+        }
+
         /**
          * Normalize a name and add to {@link #mSbName}
          */
@@ -228,6 +291,12 @@ public class SearchIndexManager {
                 mSbName.append(' ');
             }
             mSbName.append(NameNormalizer.normalize(name));
+
+            if (mSbNameDigit.length() != 0) {
+                mSbNameDigit.append(' ');
+            }
+            mSbNameDigit.append(getNameNumber(NameNormalizer
+                    .lettersAndDigitsOnly(getFullPinYin(name))));
         }
     }
 
@@ -388,6 +457,7 @@ public class SearchIndexManager {
         mValues.clear();
         mValues.put(SearchIndexColumns.CONTENT, builder.getContent());
         mValues.put(SearchIndexColumns.NAME, builder.getName());
+        mValues.put(SearchIndexColumns.NAME_DIGIT, builder.getNameDigit());
         mValues.put(SearchIndexColumns.TOKENS, builder.getTokens());
         mValues.put(SearchIndexColumns.CONTACT_ID, contactId);
         db.insert(Tables.SEARCH_INDEX, null, mValues);
