@@ -7149,6 +7149,34 @@ public class ContactsProvider2 extends AbstractContactsProvider
         appendContactStatusUpdateJoin(sb, projection, ContactsColumns.LAST_STATUS_UPDATE_ID);
         qb.setTables(sb.toString());
         qb.setProjectionMap(sContactsProjectionWithSnippetMap);
+
+        /* Do not show contacts when SIM card is disabled for CONTACTS_FILTER */
+        StringBuilder sbWhere = new StringBuilder();
+        String withoutSim = getQueryParameter(uri, withoutSimFlag);
+        if ("true".equals(withoutSim)) {
+            final long[] accountId = getAccountIdWithoutSim(uri);
+            if (accountId == null) {
+                // No such account.
+                sbWhere.setLength(0);
+                sbWhere.append("(1=2)");
+            } else {
+                if (accountId.length > 0) {
+                    sbWhere.append(" (" + Contacts._ID + " not IN (" + "SELECT "
+                            + RawContacts.CONTACT_ID + " FROM "
+                            + Tables.RAW_CONTACTS + " WHERE "
+                            + RawContacts.CONTACT_ID + " not NULL AND ( ");
+                    for (int i = 0; i < accountId.length; i++) {
+                        sbWhere.append(RawContactsColumns.ACCOUNT_ID + "="
+                                + accountId[i]);
+                        if (i != accountId.length - 1) {
+                            sbWhere.append(" OR ");
+                        }
+                    }
+                    sbWhere.append(")))");
+                }
+            }
+            qb.appendWhere(sbWhere.toString());
+        }
     }
 
     private void appendSearchIndexJoin(
@@ -7561,6 +7589,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 sb.setLength(0);
                 sb.append("(1=2)");
             } else {
+                if (accountId.length > 0) {
                     sb.append(
                             " AND (" + Contacts._ID + " not IN (" +
                                     "SELECT " + RawContacts.CONTACT_ID + " FROM "
@@ -7569,11 +7598,12 @@ public class ContactsProvider2 extends AbstractContactsProvider
                     for (int i = 0; i < accountId.length; i++) {
                         sb.append(RawContactsColumns.ACCOUNT_ID + "="
                                 + accountId[i]);
-                        if (i != accountId.length-1) {
+                        if (i != accountId.length - 1) {
                             sb.append(" or ");
                         }
-                }
+                    }
                     sb.append("))");
+                }
             }
         }
         else {
@@ -7645,15 +7675,36 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
     private long[] getAccountIdWithoutSim(Uri uri) {
         final String accountType = getQueryParameter(uri, RawContacts.ACCOUNT_TYPE);
+        final String accountName = getQueryParameter(uri, RawContacts.ACCOUNT_NAME);
         Cursor c = null;
+        SQLiteDatabase db = mContactsHelper.getWritableDatabase();
         long[] accountId = null;
         try {
-            c = mDbHelper.get().getWritableDatabase().query(Tables.ACCOUNTS, new String[] {
-                    AccountsColumns._ID
-            }, AccountsColumns.ACCOUNT_TYPE + "=?",
-                    new String[] {
-                        String.valueOf(accountType)
-                    }, null, null, null);
+            if (null != accountType) {
+                c = db.query(Tables.ACCOUNTS,
+                        new String[] { AccountsColumns._ID },
+                        AccountsColumns.ACCOUNT_TYPE + "=?",
+                        new String[] { String.valueOf(accountType) }, null,
+                        null, null);
+            } else if (!TextUtils.isEmpty(accountName)) {
+                String[] names = accountName.split(",");
+                int nameCount = names.length;
+                String where = AccountsColumns.ACCOUNT_NAME + "=?";
+                StringBuilder selection = new StringBuilder();
+                String[] selectionArgs = new String[nameCount];
+                for (int i = 0; i < nameCount; i++) {
+                    selection.append(where);
+                    if (i != nameCount - 1) {
+                        selection.append(" OR ");
+                    }
+                    selectionArgs[i] = names[i];
+                }
+                c = db.query(Tables.ACCOUNTS,
+                        new String[] { AccountsColumns._ID },
+                        selection.toString(),
+                        selectionArgs, null,
+                        null, null);
+            }
 
             if (c != null) {
                 accountId = new long[c.getCount()];
