@@ -7176,6 +7176,23 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 }
             }
             qb.appendWhere(sbWhere.toString());
+        } else {
+            final AccountWithDataSet accountWithDataSet = getAccountWithDataSetFromUri(uri);
+            // Accounts are valid by only checking one parameter, since we've
+            // already ruled out partial accounts.
+            final boolean validAccount = !TextUtils.isEmpty(accountWithDataSet.getAccountName());
+            if (validAccount) {
+                final Long accountId = mDbHelper.get().getAccountIdOrNull(accountWithDataSet);
+                if (accountId != null) {
+                    sbWhere.append(" (" + Contacts._ID + " IN (" + "SELECT "
+                            + RawContacts.CONTACT_ID + " FROM "
+                            + Tables.RAW_CONTACTS + " WHERE "
+                            + RawContacts.CONTACT_ID + " not NULL AND ( "
+                            + RawContactsColumns.ACCOUNT_ID + "=" + accountId
+                            + ")))");
+                }
+            }
+            qb.appendWhere(sbWhere.toString());
         }
     }
 
