@@ -38,6 +38,7 @@
         <item>com.facebook.wakizashi</item>
         <item>com.facebook.orca</item>
         <item>com.facebook.orca</item>
+        <item>com.android.systemui</item>
     </string-array>
 </resources>
 
