@@ -7175,7 +7175,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
                     sbWhere.append(")))");
                 }
             }
-            qb.appendWhere(sbWhere.toString());
         } else {
             final AccountWithDataSet accountWithDataSet = getAccountWithDataSetFromUri(uri);
             // Accounts are valid by only checking one parameter, since we've
@@ -7192,6 +7191,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             + ")))");
                 }
             }
+        }
+        if (!TextUtils.isEmpty(sbWhere.toString())) {
             qb.appendWhere(sbWhere.toString());
         }
     }
