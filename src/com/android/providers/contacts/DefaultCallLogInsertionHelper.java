@@ -18,7 +18,9 @@ package com.android.providers.contacts;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.os.SystemProperties;
 import android.provider.CallLog.Calls;
+import android.provider.GeocodedLocation;
 
 import com.android.i18n.phonenumbers.NumberParseException;
 import com.android.i18n.phonenumbers.PhoneNumberUtil;
@@ -40,7 +42,8 @@ import java.util.Locale;
     private final CountryMonitor mCountryMonitor;
     private PhoneNumberUtil mPhoneNumberUtil;
     private PhoneNumberOfflineGeocoder mPhoneNumberOfflineGeocoder;
-    private final Locale mLocale;
+    private Locale mLocale;
+    private Context mContext;
 
     public static synchronized DefaultCallLogInsertionHelper getInstance(Context context) {
         if (sInstance == null) {
@@ -52,6 +55,7 @@ import java.util.Locale;
     private DefaultCallLogInsertionHelper(Context context) {
         mCountryMonitor = new CountryMonitor(context);
         mLocale = context.getResources().getConfiguration().locale;
+        mContext = context;
     }
 
     @Override
@@ -92,12 +96,19 @@ import java.util.Locale;
 
     @Override
     public String getGeocodedLocationFor(String number, String countryIso) {
-        PhoneNumber structuredPhoneNumber = parsePhoneNumber(number, countryIso);
-        if (structuredPhoneNumber != null) {
-            return getPhoneNumberOfflineGeocoder().getDescriptionForNumber(
-                    structuredPhoneNumber, mLocale);
+        GeocodedLocation geocodedLocation = null;
+        if (SystemProperties.getBoolean("persist.env.phone.location", false)
+                && (geocodedLocation = GeocodedLocation.getLocation(mContext, number)) != null) {
+            return geocodedLocation.getAreaCode().getAddress();
         } else {
-            return null;
+            PhoneNumber structuredPhoneNumber = parsePhoneNumber(number, countryIso);
+            mLocale = mContext.getResources().getConfiguration().locale;
+            if (structuredPhoneNumber != null) {
+                return getPhoneNumberOfflineGeocoder().getDescriptionForNumber(
+                        structuredPhoneNumber, mLocale);
+            } else {
+                return null;
+            }
         }
     }
 }

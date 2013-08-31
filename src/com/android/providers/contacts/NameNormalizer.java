@@ -46,7 +46,7 @@ public class NameNormalizer {
         }
         sCollatorLocale = locale;
 
-        sCachedCompressingCollator = (RuleBasedCollator) Collator.getInstance(locale);
+        sCachedCompressingCollator = (RuleBasedCollator) Collator.getInstance(Locale.US);
         sCachedCompressingCollator.setStrength(Collator.PRIMARY);
         sCachedCompressingCollator.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
 
@@ -103,7 +103,7 @@ public class NameNormalizer {
     /**
      * Returns a string containing just the letters and digits from the original string.
      */
-    private static String lettersAndDigitsOnly(String name) {
+    public static String lettersAndDigitsOnly(String name) {
         char[] letters = name.toCharArray();
         int length = 0;
         for (int i = 0; i < letters.length; i++) {

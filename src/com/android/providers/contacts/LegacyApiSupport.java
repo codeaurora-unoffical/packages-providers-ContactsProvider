@@ -1939,8 +1939,12 @@ public class LegacyApiSupport {
             sb.append(" AND " + RawContacts.ACCOUNT_TYPE + "=");
             DatabaseUtils.appendEscapedSQLString(sb, mAccount.type);
         } else {
-            sb.append(RawContacts.ACCOUNT_NAME + " IS NULL" +
-                    " AND " + RawContacts.ACCOUNT_TYPE + " IS NULL");
+            sb.append("((" + RawContacts.ACCOUNT_NAME + "=");
+            DatabaseUtils.appendEscapedSQLString(sb, "PHONE");
+            sb.append(" AND " + RawContacts.ACCOUNT_TYPE + "=");
+            DatabaseUtils.appendEscapedSQLString(sb, "com.android.localphone");
+            sb.append(") OR (" + RawContacts.ACCOUNT_NAME + " IS NULL" +
+                  " AND " + RawContacts.ACCOUNT_TYPE + " IS NULL))");
         }
     }
 

@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2009 The Android Open Source Project
- *
+ * Copyright (C) 2013 The Linux Foundation. All Rights Reserved.
+    Not a Contribution.
+
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -113,7 +115,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   700-799 Jelly Bean
      * </pre>
      */
-    static final int DATABASE_VERSION = 711;
+    static final int DATABASE_VERSION = 714;
 
     private static final String DATABASE_NAME = "contacts2.db";
     private static final String DATABASE_PRESENCE = "presence_db";
@@ -282,8 +284,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 " LEFT OUTER JOIN (SELECT "
                         + "data.data1 AS member_count_group_id, "
                         + "COUNT(data.raw_contact_id) AS group_member_count "
-                    + "FROM data "
-                    + "WHERE "
+                    + "FROM data , raw_contacts "
+                    + "WHERE data.raw_contact_id = raw_contacts._id and raw_contacts.deleted != 1 and "
                         + "data.mimetype_id = (SELECT _id FROM mimetypes WHERE "
                             + "mimetypes.mimetype = '" + GroupMembership.CONTENT_ITEM_TYPE + "')"
                     + "GROUP BY member_count_group_id) AS member_count_table" // End of inner query
@@ -483,6 +485,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
 
         public static final String ACCOUNT_ID = "account_id";
         public static final String CONCRETE_ACCOUNT_ID = Tables.GROUPS + "." + ACCOUNT_ID;
+
+        public static final String CONCRETE_ACCOUNT_NAME =
+            Tables.GROUPS + "." + Groups.ACCOUNT_NAME;
+        public static final String CONCRETE_ACCOUNT_TYPE =
+            Tables.GROUPS + "." + Groups.ACCOUNT_TYPE;
     }
 
     public interface ViewGroupsColumns {
@@ -502,6 +509,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String RAW_CONTACT_ID = "raw_contact_id";
         public static final String NORMALIZED_NUMBER = "normalized_number";
         public static final String MIN_MATCH = "min_match";
+        public static final String NORMALIZED = "normalized";
     }
 
     public interface NameLookupColumns {
@@ -662,6 +670,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String CONTACT_ID = "contact_id";
         public static final String CONTENT = "content";
         public static final String NAME = "name";
+        public static final String NAME_DIGIT = "name_digit";
         public static final String TOKENS = "tokens";
     }
 
@@ -1136,7 +1145,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 PhoneLookupColumns.RAW_CONTACT_ID
                         + " INTEGER REFERENCES raw_contacts(_id) NOT NULL," +
                 PhoneLookupColumns.NORMALIZED_NUMBER + " TEXT NOT NULL," +
-                PhoneLookupColumns.MIN_MATCH + " TEXT NOT NULL" +
+                PhoneLookupColumns.MIN_MATCH + " TEXT NOT NULL," +
+                PhoneLookupColumns.NORMALIZED + " TEXT NOT NULL" +
         ");");
 
         db.execSQL("CREATE INDEX phone_lookup_index ON " + Tables.PHONE_LOOKUP + " (" +
@@ -1205,6 +1215,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Groups.SYNC2 + " TEXT, " +
                 Groups.SYNC3 + " TEXT, " +
                 Groups.SYNC4 + " TEXT " +
+                Groups.ACCOUNT_NAME + " STRING DEFAULT NULL, " +
+                Groups.ACCOUNT_TYPE + " STRING DEFAULT NULL " +
         ");");
 
         db.execSQL("CREATE INDEX groups_source_id_account_id_index ON " + Tables.GROUPS + " (" +
@@ -1275,8 +1287,9 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.MIME_TYPE + " TEXT," +
                 Voicemails.SOURCE_DATA + " TEXT," +
                 Voicemails.SOURCE_PACKAGE + " TEXT," +
-                Voicemails.STATE + " INTEGER" +
-                Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0" +
+                Voicemails.STATE + " INTEGER," +
+                Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0," +
+                Calls.DURATION_TYPE + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE +
         ");");
 
         // Voicemail source status table.
@@ -1386,6 +1399,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                     + SearchIndexColumns.CONTACT_ID + " INTEGER REFERENCES contacts(_id) NOT NULL,"
                     + SearchIndexColumns.CONTENT + " TEXT, "
                     + SearchIndexColumns.NAME + " TEXT, "
+                    + SearchIndexColumns.NAME_DIGIT + " TEXT, "
                     + SearchIndexColumns.TOKENS + " TEXT"
                 + ")");
         if (rebuildSqliteStats) {
@@ -2487,6 +2501,24 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // the subscription for the calls slot.
             upgradeToVersion711(db);
             oldVersion = 711;
+        }
+
+        if (oldVersion < 712) {
+            //add two column of account info for groups
+            upgradeToVersion712(db);
+            oldVersion = 712;
+        }
+
+        if (oldVersion < 713) {
+            //add the type of call duration
+            upgradeToVersion713(db);
+            oldVersion = 713;
+        }
+
+        if (oldVersion < 714) {
+            //add one column of search_index and add one column for phone_lookup for smart dialer
+            upgradeToVersion714(db);
+            oldVersion = 714;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -3979,8 +4011,65 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Tables.CALLS
                     + " ADD " + Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0;");
         } catch (SQLException e) {
-            Log.w(TAG, "Exception upgrading contacts2.db from 706 to 707 " + e);
+            Log.w(TAG, "Exception upgrading contacts2.db from 710 to 711 " + e);
         }
+    }
+
+    private void upgradeToVersion712(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.GROUPS
+                    + " ADD " + Groups.ACCOUNT_NAME + " STRING DEFAULT NULL;");
+            db.execSQL("ALTER TABLE " + Tables.GROUPS
+                    + " ADD " + Groups.ACCOUNT_TYPE + " STRING DEFAULT NULL;");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 711 to 712 " + e);
+        }
+    }
+
+    private void upgradeToVersion713(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + Calls.DURATION_TYPE
+                    + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE + ";");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 712 to 713 " + e);
+        }
+    }
+
+    private void upgradeToVersion714(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.PHONE_LOOKUP
+                    + " ADD " + PhoneLookupColumns.NORMALIZED + " TEXT NOT NULL DEFAULT '0';");
+            updateSearchIndexTable(db);
+        } catch (SQLException e) {
+            // Shouldn't be here unless we're debugging and interrupt the process.
+            Log.w(TAG, "Exception upgrading contacts2.db from 708 to 709 " + e);
+        }
+    }
+
+    private void updateSearchIndexTable(SQLiteDatabase db) {
+        db.execSQL("CREATE VIRTUAL TABLE " + "search_index_temp"
+                + " USING FTS4 ("
+                + SearchIndexColumns.CONTACT_ID + " INTEGER REFERENCES contacts(_id) NOT NULL,"
+                + SearchIndexColumns.CONTENT + " TEXT, "
+                + SearchIndexColumns.NAME + " TEXT, "
+                + SearchIndexColumns.NAME_DIGIT + " TEXT, "
+                + SearchIndexColumns.TOKENS + " TEXT"
+                + ")");
+        db.execSQL("INSERT INTO search_index_temp "
+                + "SELECT contact_id,content,name,NULL,tokens from " + Tables.SEARCH_INDEX);
+        db.execSQL("DROP TABLE IF EXISTS " + Tables.SEARCH_INDEX);
+        db.execSQL("CREATE VIRTUAL TABLE " + Tables.SEARCH_INDEX
+                + " USING FTS4 ("
+                + SearchIndexColumns.CONTACT_ID + " INTEGER REFERENCES contacts(_id) NOT NULL,"
+                + SearchIndexColumns.CONTENT + " TEXT, "
+                + SearchIndexColumns.NAME + " TEXT, "
+                + SearchIndexColumns.NAME_DIGIT + " TEXT, "
+                + SearchIndexColumns.TOKENS + " TEXT"
+                + ")");
+        db.execSQL("INSERT INTO " + Tables.SEARCH_INDEX
+                + " SELECT contact_id,content,name,name_digit,tokens from search_index_temp");
+        db.execSQL("DROP TABLE IF EXISTS search_index_temp");
+        updateSqliteStats(db);
     }
 
     public String extractHandleFromEmailAddress(String email) {
