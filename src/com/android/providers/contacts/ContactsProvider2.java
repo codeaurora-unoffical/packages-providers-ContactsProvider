@@ -6449,6 +6449,37 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
                 setTablesAndProjectionMapForContacts(qb, uri, projection);
 
+                StringBuilder sbWhere = new StringBuilder();
+                String withoutSim = getQueryParameter(uri, withoutSimFlag);
+                if ("true".equals(withoutSim)) {
+                    final long[] accountId = getAccountIdWithoutSim(uri);
+                    if (accountId == null) {
+                        // No such account.
+                        sbWhere.setLength(0);
+                        sbWhere.append("(1=2)");
+                    } else {
+                        if (accountId.length > 0) {
+                            sbWhere.append(" (" + Contacts._ID + " not IN (" + "SELECT "
+                                    + RawContacts.CONTACT_ID + " FROM "
+                                    + Tables.RAW_CONTACTS + " WHERE "
+                                    + RawContacts.CONTACT_ID + " not NULL AND ( ");
+                            for (int i = 0; i < accountId.length; i++) {
+                                sbWhere.append(RawContactsColumns.ACCOUNT_ID + "="
+                                        + accountId[i]);
+                                if (i != accountId.length - 1) {
+                                    sbWhere.append(" OR ");
+                                }
+                            }
+                            sbWhere.append(")))");
+                        }
+                    }
+                    if (!TextUtils.isEmpty(sbWhere.toString())) {
+                        qb.appendWhere(sbWhere.toString());
+                    }
+                    return mAggregator.get().queryAggregationSuggestions(qb, projection,
+                            contactId, maxSuggestions, filter, parameters, true);
+                }
+
                 return mAggregator.get().queryAggregationSuggestions(qb, projection, contactId,
                         maxSuggestions, filter, parameters);
             }
