@@ -7612,7 +7612,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             " AND (" + Contacts._ID + " not IN (" +
                                     "SELECT " + RawContacts.CONTACT_ID + " FROM "
                                     + Tables.RAW_CONTACTS +
-                                    " WHERE " + RawContacts.CONTACT_ID + " not NULL AND  ");
+                                    " WHERE " + RawContacts.CONTACT_ID + " not NULL AND ( ");
                     for (int i = 0; i < accountId.length; i++) {
                         sb.append(RawContactsColumns.ACCOUNT_ID + "="
                                 + accountId[i]);
@@ -7620,7 +7620,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             sb.append(" or ");
                         }
                     }
-                    sb.append("))");
+                    sb.append(")))");
                 }
             }
         }
