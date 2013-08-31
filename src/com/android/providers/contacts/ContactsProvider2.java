@@ -5272,6 +5272,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add("display_name")
             .add("photo_id")
             .add("lookup")
+            .add("data_id")
             .build();
 
     private String[] getStringsFromNumber(char number) {
