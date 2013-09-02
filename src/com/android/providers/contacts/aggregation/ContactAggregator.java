@@ -2329,13 +2329,88 @@ public class ContactAggregator {
     public Cursor queryAggregationSuggestions(SQLiteQueryBuilder qb,
             String[] projection, long contactId, int maxSuggestions, String filter,
             ArrayList<AggregationSuggestionParameter> parameters) {
+        return queryAggregationSuggestions(qb, projection, contactId, maxSuggestions,
+                filter, parameters, false);
+    }
+
+    /**
+     * Finds matching contacts and returns a cursor on those.
+     *
+     * @param withoutSim remove sim contacts or not
+     */
+    public Cursor queryAggregationSuggestions(SQLiteQueryBuilder qb,
+            String[] projection, long contactId, int maxSuggestions, String filter,
+            ArrayList<AggregationSuggestionParameter> parameters, boolean withoutSim) {
         final SQLiteDatabase db = mDbHelper.getReadableDatabase();
         db.beginTransaction();
         try {
             List<MatchScore> bestMatches = findMatchingContacts(db, contactId, parameters);
+            if (withoutSim) {
+                trimSimContactMatches(db, bestMatches);
+            }
             return queryMatchingContacts(qb, db, projection, bestMatches, maxSuggestions, filter);
         } finally {
             db.endTransaction();
+        }
+    }
+
+    /**
+     * remove sim contacts in match list
+     */
+    private void trimSimContactMatches(SQLiteDatabase db, List<MatchScore> bestMatches) {
+        // query sim accounts' ids
+        final Cursor accountCursor = db.query(Tables.ACCOUNTS,
+                new String[] { AccountsColumns._ID },
+                AccountsColumns.ACCOUNT_TYPE + "=?",
+                new String[] { ContactsProvider2.ACCOUNT_TYPE_SIM }, null,
+                null, null);
+        long[] accountIds = null;
+        try {
+            if (accountCursor != null && accountCursor.getCount() > 0) {
+                accountIds = new long[accountCursor.getCount()];
+                for (int i = 0; i < accountCursor.getCount(); i++) {
+                    if (accountCursor.moveToNext()) {
+                        accountIds[accountCursor.getPosition()] = accountCursor.getInt(0);
+                    }
+                }
+            }
+        } finally {
+            accountCursor.close();
+        }
+        if (accountIds != null && accountIds.length > 0) {
+            long contactId = -1;
+            ArrayList<MatchScore> listMembersToRemove = new ArrayList<MatchScore>();
+             for(MatchScore matchScore : bestMatches){
+                contactId = matchScore.getContactId();
+                StringBuilder selection = new StringBuilder();
+                selection.append(RawContacts.CONTACT_ID + " = " + contactId);
+                if (accountIds.length > 0) {
+                    selection.append(" AND ( ");
+                    for (int j = 0; j < accountIds.length; j++) {
+                        selection.append(RawContactsColumns.ACCOUNT_ID + " = "
+                                + accountIds[j]);
+                        if (j != accountIds.length - 1) {
+                            selection.append(" OR ");
+                        }
+                    }
+                    selection.append(" )");
+                    final Cursor c = db.query(RawContactIdQuery.TABLE, new String[] {
+                        RawContactsColumns.ACCOUNT_ID }, selection.toString(), null, null,
+                        null, null);
+                    try {
+                        if (c != null && c.getCount() > 0) {
+                            // if current matchScore's account is a sim account,
+                            // we add it to listMembersToRemove.
+                            listMembersToRemove.add(matchScore);
+                        }
+                    } finally {
+                        c.close();
+                    }
+                }
+            }
+            // remove all the matchscores that whose account is sim account
+            // from bestMatches.
+            bestMatches.removeAll(listMembersToRemove);
         }
     }
 
