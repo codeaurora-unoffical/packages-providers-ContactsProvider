@@ -149,6 +149,7 @@ import com.android.providers.contacts.aggregation.util.CommonNicknameCache;
 import com.android.providers.contacts.database.ContactsTableUtil;
 import com.android.providers.contacts.database.DeletedContactsTableUtil;
 import com.android.providers.contacts.util.Clock;
+import com.android.providers.contacts.util.ContactsProviderUtil;
 import com.android.providers.contacts.util.DbQueryUtils;
 import com.android.providers.contacts.util.NeededForTesting;
 import com.android.vcard.VCardComposer;
@@ -2796,36 +2797,22 @@ public class ContactsProvider2 extends AbstractContactsProvider
         switch (sub) {
             case SIM:
                 if (simPhotoData == null) {
-                    simPhotoData = getBitmapData(R.drawable.ic_contact_sim);
+                    simPhotoData = ContactsProviderUtil.getBitmapData(getContext(),
+                            R.drawable.ic_contact_sim);
                 }
                 return simPhotoData;
             case SIM1:
                 if (simPhotoData1 == null) {
-                    simPhotoData1 = getBitmapData(R.drawable.ic_contact_sim1);
+                    simPhotoData1 = ContactsProviderUtil.getBitmapData(getContext(),
+                            ContactsProviderUtil.getSimIconResourceId(getContext(), sub - 1));
                 }
                 return simPhotoData1;
             case SIM2:
                 if (simPhotoData2 == null) {
-                    simPhotoData2 = getBitmapData(R.drawable.ic_contact_sim2);
+                    simPhotoData2 = ContactsProviderUtil.getBitmapData(getContext(),
+                            ContactsProviderUtil.getSimIconResourceId(getContext(), sub - 1));
                 }
                 return simPhotoData2;
-        }
-        return null;
-    }
-
-    private byte[] getBitmapData(int resourceId) {
-        Bitmap photo = BitmapFactory.decodeResource(getContext()
-                .getResources(),
-                resourceId);
-        final int size = photo.getWidth() * photo.getHeight() * 4;
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(size);
-        try {
-            photo.compress(Bitmap.CompressFormat.PNG, 100, out);
-            out.flush();
-            out.close();
-            return out.toByteArray();
-        } catch (IOException e) {
-            Log.d(TAG, "get photo for sim contacts error", e);
         }
         return null;
     }
