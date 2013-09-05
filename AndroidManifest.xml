@@ -76,6 +76,12 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name="SimPhotoChangeReceiver">
+            <intent-filter>
+                <action android:name="com.android.providers.contacts.SimPhotoChangeReceiver"/>
+            </intent-filter>
+        </receiver>
+
         <receiver android:name="PackageIntentReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
