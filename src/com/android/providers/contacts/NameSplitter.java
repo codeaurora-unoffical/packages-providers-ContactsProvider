@@ -524,10 +524,18 @@ public class NameSplitter {
         String prefix = includePrefix ? name.prefix : null;
         switch (name.fullNameStyle) {
             case FullNameStyle.CJK:
-            case FullNameStyle.CHINESE:
             case FullNameStyle.KOREAN:
                 return join(prefix, name.familyName, name.middleName, name.givenNames,
                         name.suffix, false, false, false);
+
+            case FullNameStyle.CHINESE:
+                if (givenNameFirst) {
+                    return join(prefix, name.middleName, name.givenNames, name.familyName,
+                            name.suffix, false, false, false);
+                } else {
+                    return join(prefix, name.familyName, name.middleName, name.givenNames,
+                            name.suffix, false, false, false);
+                }
 
             case FullNameStyle.JAPANESE:
                 return join(prefix, name.familyName, name.middleName, name.givenNames,
