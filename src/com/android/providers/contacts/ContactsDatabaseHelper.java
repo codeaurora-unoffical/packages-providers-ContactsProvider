@@ -5417,6 +5417,10 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 }
                 displayNameStyle = mNameSplitter.getAdjustedFullNameStyle(displayNameStyle);
             }
+            if (displayNameStyle == FullNameStyle.CHINESE ||
+                    displayNameStyle == FullNameStyle.CJK) {
+                sortKeyPrimary = sortKeyAlternative = sortNamePrimary;
+            }
         }
 
         if (sortKeyPrimary == null) {
