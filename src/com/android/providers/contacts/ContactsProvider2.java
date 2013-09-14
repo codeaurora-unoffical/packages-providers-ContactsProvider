@@ -5771,6 +5771,10 @@ public class ContactsProvider2 extends AbstractContactsProvider
             case SMART_DIALER_FILTER: {
                 String filter = uri.getQueryParameter("filter");
                 if(TextUtils.isEmpty(filter)) break;
+                String nameFilter = filter.replaceFirst("^1+", "");
+                if(TextUtils.isEmpty(nameFilter)){
+                    nameFilter = filter;
+                }
 
                 String querySelect = null;
                 String querySelect1 = "view_contacts JOIN (SELECT raw_contact_id, "
@@ -5783,9 +5787,9 @@ public class ContactsProvider2 extends AbstractContactsProvider
                         + " ON (status_update_id=contacts_status_updates.status_update_data_id) "
                         + " WHERE (_id IN (SELECT contact_id FROM search_index"
                         + " WHERE name_digit like '"
-                        + filter
+                        + nameFilter
                         + "%' or name_digit like '% "
-                        + filter
+                        + nameFilter
                         + "%')"
                         + " or normalized_number like '%"
                         + filter
