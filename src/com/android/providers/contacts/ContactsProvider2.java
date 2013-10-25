@@ -7190,20 +7190,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
         StringBuilder sb = new StringBuilder();
         sb.append(Views.CONTACTS);
 
-        if (filter != null) {
-            filter = filter.trim();
-        }
-
-        if (TextUtils.isEmpty(filter) || (directoryId != -1 && directoryId != Directory.DEFAULT)) {
-            sb.append(" JOIN (SELECT NULL AS " + SearchSnippetColumns.SNIPPET + " WHERE 0)");
-        } else {
-            appendSearchIndexJoin(sb, uri, projection, filter, deferSnippeting);
-        }
-        appendContactPresenceJoin(sb, projection, Contacts._ID);
-        appendContactStatusUpdateJoin(sb, projection, ContactsColumns.LAST_STATUS_UPDATE_ID);
-        qb.setTables(sb.toString());
-        qb.setProjectionMap(sContactsProjectionWithSnippetMap);
-
         /* Do not show contacts when SIM card is disabled for CONTACTS_FILTER */
         StringBuilder sbWhere = new StringBuilder();
         String withoutSim = getQueryParameter(uri, withoutSimFlag);
@@ -7237,18 +7223,36 @@ public class ContactsProvider2 extends AbstractContactsProvider
             if (validAccount) {
                 final Long accountId = mDbHelper.get().getAccountIdOrNull(accountWithDataSet);
                 if (accountId != null) {
-                    sbWhere.append(" (" + Contacts._ID + " IN (" + "SELECT "
-                            + RawContacts.CONTACT_ID + " FROM "
+                    sbWhere.append(" INNER JOIN (SELECT "
+                            + RawContacts.CONTACT_ID
+                            + " AS raw_contact_contact_id FROM "
                             + Tables.RAW_CONTACTS + " WHERE "
-                            + RawContacts.CONTACT_ID + " not NULL AND ( "
-                            + RawContactsColumns.ACCOUNT_ID + "=" + accountId
-                            + ")))");
+                            + RawContactsColumns.ACCOUNT_ID + " = "
+                            + accountId
+                            + ") ON raw_contact_contact_id = " + Contacts._ID);
                 }
             }
         }
+
         if (!TextUtils.isEmpty(sbWhere.toString())) {
-            qb.appendWhere(sbWhere.toString());
+           sb.append(sbWhere.toString());
         }
+
+        if (filter != null) {
+            filter = filter.trim();
+        }
+
+        if (TextUtils.isEmpty(filter) || (directoryId != -1 && directoryId != Directory.DEFAULT)) {
+            sb.append(" JOIN (SELECT NULL AS " + SearchSnippetColumns.SNIPPET + " WHERE 0)");
+        } else {
+            appendSearchIndexJoin(sb, uri, projection, filter, deferSnippeting);
+        }
+        appendContactPresenceJoin(sb, projection, Contacts._ID);
+        appendContactStatusUpdateJoin(sb, projection, ContactsColumns.LAST_STATUS_UPDATE_ID);
+        qb.setTables(sb.toString());
+        qb.setProjectionMap(sContactsProjectionWithSnippetMap);
+
+
     }
 
     private void appendSearchIndexJoin(
