@@ -149,7 +149,6 @@ import com.android.providers.contacts.aggregation.util.CommonNicknameCache;
 import com.android.providers.contacts.database.ContactsTableUtil;
 import com.android.providers.contacts.database.DeletedContactsTableUtil;
 import com.android.providers.contacts.util.Clock;
-import com.android.providers.contacts.util.ContactsProviderUtil;
 import com.android.providers.contacts.util.DbQueryUtils;
 import com.android.providers.contacts.util.NeededForTesting;
 import com.android.vcard.VCardComposer;
@@ -718,6 +717,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add(Contacts.IS_USER_PROFILE)
             .addAll(sContactsColumns)
             .addAll(sContactsPresenceColumns)
+            .add(RawContacts.ACCOUNT_TYPE)
+            .add(RawContacts.ACCOUNT_NAME)
             .build();
 
     /** Contains just the contacts columns */
@@ -2636,7 +2637,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
         mValues.putAll(values);
         mValues.putNull(RawContacts.CONTACT_ID);
 
-        AccountWithDataSet accountWithDataSet = resolveAccountWithDataSet(uri, mValues);
         final long accountId = resolveAccountIdInTransaction(uri, mValues);
         mValues.remove(RawContacts.ACCOUNT_NAME);
         mValues.remove(RawContacts.ACCOUNT_TYPE);
@@ -2652,9 +2652,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
         long rawContactId = db.insert(Tables.RAW_CONTACTS,
                 RawContacts.CONTACT_ID, mValues);
-        if (rawContactId != -1) {
-            insertSimPhoto(accountWithDataSet, rawContactId);
-        }
         int aggregationMode = RawContacts.AGGREGATION_MODE_SUSPENDED;
         if (mValues.containsKey(RawContacts.AGGREGATION_MODE)) {
             aggregationMode = mValues.getAsInteger(RawContacts.AGGREGATION_MODE);
@@ -2793,63 +2790,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
         return -1;
     }
 
-    private byte[] getBitmapDataBySub(int sub) {
-        switch (sub) {
-            case SIM:
-                if (simPhotoData == null) {
-                    simPhotoData = ContactsProviderUtil.getBitmapData(getContext(),
-                            R.drawable.ic_contact_sim);
-                }
-                return simPhotoData;
-            case SIM1:
-                if (simPhotoData1 == null) {
-                    simPhotoData1 = ContactsProviderUtil.getBitmapData(getContext(),
-                            ContactsProviderUtil.getSimIconResourceId(getContext(), sub - 1));
-                }
-                return simPhotoData1;
-            case SIM2:
-                if (simPhotoData2 == null) {
-                    simPhotoData2 = ContactsProviderUtil.getBitmapData(getContext(),
-                            ContactsProviderUtil.getSimIconResourceId(getContext(), sub - 1));
-                }
-                return simPhotoData2;
-        }
-        return null;
-    }
-
-    private boolean setSimPhoto(ContentValues values, int sub) {
-        if (sub == -1) {
-            return false;
-        }
-        byte[] data = getBitmapDataBySub(sub);
-        if (data != null) {
-            values.put(Photo.PHOTO, data);
-            return true;
-        }
-        return false;
-    }
-
-    private void insertSimPhoto(AccountWithDataSet accountWithDataSet, long rawContactId) {
-        if (accountWithDataSet == null || rawContactId == -1) {
-            return;
-        }
-        int sub = geiSimContactsSub(accountWithDataSet.getAccountName(),
-                accountWithDataSet.getAccountType());
-        if (sub == -1) {
-            return;
-        }
-        byte[] data = getBitmapDataBySub(sub);
-        if (data != null) {
-            ContentValues values = new ContentValues();
-            values.put(DataColumns.MIMETYPE_ID,
-                    mDbHelper.get().getMimeTypeId(Photo.CONTENT_ITEM_TYPE));
-            values.put(Data.RAW_CONTACT_ID, rawContactId);
-            values.put(Photo.PHOTO, data);
-            values.put(Photo.IS_SUPER_PRIMARY, 1);
-            mDbHelper.get().getWritableDatabase().insert(Tables.DATA, null, values);
-        }
-    }
-
     /**
      * Inserts an item in the data table
      *
@@ -2874,10 +2814,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
         final String mimeType = mValues.getAsString(Data.MIMETYPE);
         if (TextUtils.isEmpty(mimeType)) {
             throw new IllegalArgumentException(Data.MIMETYPE + " is required");
-        }
-
-        if (Photo.CONTENT_ITEM_TYPE.equals(mimeType)) {
-            setSimPhoto(mValues, getSimContactsSub(rawContactId));
         }
 
         mValues.put(DataColumns.MIMETYPE_ID, mDbHelper.get().getMimeTypeId(mimeType));
@@ -4590,10 +4526,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
         final String mimeType = c.getString(DataRowHandler.DataUpdateQuery.MIMETYPE);
         DataRowHandler rowHandler = getDataRowHandler(mimeType);
-        final long rawContactsId = c.getLong(DataRowHandler.DataUpdateQuery.RAW_CONTACT_ID);
-        if (Photo.CONTENT_ITEM_TYPE.equals(mimeType)) {
-            setSimPhoto(values, getSimContactsSub(rawContactsId));
-        }
         boolean updated =
                 rowHandler.update(db, mTransactionContext.get(), values, c,
                         callerIsSyncAdapter);
@@ -5260,6 +5192,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add("photo_id")
             .add("lookup")
             .add("data_id")
+            .add(RawContacts.ACCOUNT_TYPE)
+            .add(RawContacts.ACCOUNT_NAME)
             .build();
 
     private String[] getStringsFromNumber(char number) {
