@@ -7169,7 +7169,11 @@ public class ContactsProvider2 extends AbstractContactsProvider
         }
 
         if (!TextUtils.isEmpty(sbWhere.toString())) {
-           sb.append(sbWhere.toString());
+            if ("true".equals(withoutSim)) {
+                qb.appendWhere(sbWhere.toString());
+            } else {
+                sb.append(sbWhere.toString());
+            }
         }
 
         if (filter != null) {
