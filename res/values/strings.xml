@@ -86,4 +86,8 @@
     <!-- Debug tool - email body [CHAR LIMIT=NONE] -->
     <string name="debug_dump_email_body">Attached is my contacts database with all my contacts information.  Handle with care.</string>
 
+    <integer name="preloaded_contacts_num">0</integer>
+    <string-array name="preloaded_contacts_name"></string-array>
+    <string-array name="preloaded_contacts_number"></string-array>
+    <string-array name="preloaded_contacts_email"></string-array>
 </resources>
