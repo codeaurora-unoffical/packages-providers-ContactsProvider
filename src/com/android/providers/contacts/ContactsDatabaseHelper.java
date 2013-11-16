@@ -4597,6 +4597,15 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         if (id != null) {
             return id;
         }
+        String accountType = accountWithDataSet.getAccountType();
+        if(accountType != null && accountType.equalsIgnoreCase(ContactsProvider2.ACCOUNT_TYPE_SIM)){
+            ContentValues values = new ContentValues();
+            values.put(ContactsContract.Settings.ACCOUNT_NAME, accountWithDataSet.getAccountName());
+            values.put(ContactsContract.Settings.ACCOUNT_TYPE, accountWithDataSet.getAccountType());
+            values.put(ContactsContract.Settings.SHOULD_SYNC, 1);
+            values.put(ContactsContract.Settings.UNGROUPED_VISIBLE, 1);
+            getWritableDatabase().insert(Tables.SETTINGS, null, values);
+        }
         final SQLiteStatement insert = getWritableDatabase().compileStatement(
                 "INSERT INTO " + Tables.ACCOUNTS +
                 " (" + AccountsColumns.ACCOUNT_NAME + ", " +
