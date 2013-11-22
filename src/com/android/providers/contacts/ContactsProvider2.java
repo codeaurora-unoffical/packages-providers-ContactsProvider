@@ -6320,6 +6320,36 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             PhoneNumberUtils.normalizeNumber(number);
                     mDbHelper.get().buildPhoneLookupAndContactQuery(
                             qb, normalizedNumber, numberE164);
+
+                    String withoutSim = getQueryParameter(uri, withoutSimFlag);
+                    StringBuilder sbWhere = new StringBuilder();
+                    if ("true".equals(withoutSim)) {
+                        final long[] accountId = getAccountIdWithoutSim(uri);
+                        if (accountId == null || accountId.length == 0) {
+                            // No such account.
+                            sbWhere.setLength(0);
+                            sbWhere.append("(1)");
+                        } else {
+                            if (accountId.length > 0) {
+                                sbWhere.append(" AND (" + RawContacts.CONTACT_ID
+                                        + " not IN (" + "SELECT "
+                                        + RawContacts.CONTACT_ID + " FROM "
+                                        + Tables.RAW_CONTACTS + " WHERE "
+                                        + RawContacts.CONTACT_ID + " not NULL AND ( ");
+                                for (int i = 0; i < accountId.length; i++) {
+                                    sbWhere.append(RawContactsColumns.ACCOUNT_ID + "="
+                                            + accountId[i]);
+                                    if (i != accountId.length - 1) {
+                                        sbWhere.append(" OR ");
+                                    }
+                                }
+                                sbWhere.append(")))");
+                            }
+                        }
+                        if (!TextUtils.isEmpty(sbWhere.toString())) {
+                            qb.appendWhere(sbWhere.toString());
+                        }
+                    }
                     qb.setProjectionMap(sPhoneLookupProjectionMap);
 
                     // Peek at the results of the first query (which attempts to use fully
@@ -6343,6 +6373,10 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             // phone_number_compare_loose in SQLite works only with non-normalized
                             // numbers
                             mDbHelper.get().buildFallbackPhoneLookupAndContactQuery(qb, number);
+
+                            if (!TextUtils.isEmpty(sbWhere.toString())) {
+                                qb.appendWhere(sbWhere.toString());
+                            }
 
                             qb.setProjectionMap(sPhoneLookupProjectionMap);
                         }
