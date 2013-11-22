@@ -6308,7 +6308,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                         if (accountId == null || accountId.length == 0) {
                             // No such account.
                             sbWhere.setLength(0);
-                            sbWhere.append("(1)");
+                            sbWhere.append(" AND (1)");
                         } else {
                             if (accountId.length > 0) {
                                 sbWhere.append(" AND (" + RawContacts.CONTACT_ID
