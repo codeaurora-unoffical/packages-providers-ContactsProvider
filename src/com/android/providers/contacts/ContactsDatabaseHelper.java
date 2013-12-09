@@ -115,7 +115,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   800-899 Kitkat
      * </pre>
      */
-    static final int DATABASE_VERSION = 803;
+    static final int DATABASE_VERSION = 804;
 
     private static final String DATABASE_NAME = "contacts2.db";
     private static final String DATABASE_PRESENCE = "presence_db";
@@ -507,6 +507,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String RAW_CONTACT_ID = "raw_contact_id";
         public static final String NORMALIZED_NUMBER = "normalized_number";
         public static final String MIN_MATCH = "min_match";
+        public static final String NORMALIZED = "normalized";
     }
 
     public interface NameLookupColumns {
@@ -667,6 +668,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String CONTACT_ID = "contact_id";
         public static final String CONTENT = "content";
         public static final String NAME = "name";
+        public static final String NAME_DIGIT = "name_digit";
         public static final String TOKENS = "tokens";
     }
 
@@ -1153,7 +1155,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 PhoneLookupColumns.RAW_CONTACT_ID
                         + " INTEGER REFERENCES raw_contacts(_id) NOT NULL," +
                 PhoneLookupColumns.NORMALIZED_NUMBER + " TEXT NOT NULL," +
-                PhoneLookupColumns.MIN_MATCH + " TEXT NOT NULL" +
+                PhoneLookupColumns.MIN_MATCH + " TEXT NOT NULL," +
+                PhoneLookupColumns.NORMALIZED + " TEXT NOT NULL" +
         ");");
 
         db.execSQL("CREATE INDEX phone_lookup_index ON " + Tables.PHONE_LOOKUP + " (" +
@@ -1401,6 +1404,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                     + SearchIndexColumns.CONTACT_ID + " INTEGER REFERENCES contacts(_id) NOT NULL,"
                     + SearchIndexColumns.CONTENT + " TEXT, "
                     + SearchIndexColumns.NAME + " TEXT, "
+                    + SearchIndexColumns.NAME_DIGIT + " TEXT, "
                     + SearchIndexColumns.TOKENS + " TEXT"
                 + ")");
         if (rebuildSqliteStats) {
@@ -2524,6 +2528,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // now indexed as names.
             upgradeSearchIndex = true;
             oldVersion = 803;
+        }
+
+        if (oldVersion < 804) {
+            //add one column of search_index and add one column for phone_lookup for smart dialer
+            upgradeToVersion804(db);
+            oldVersion = 804;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -4025,6 +4035,44 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 ContactsContract.PinnedPositions.UNPINNED + ";");
         db.execSQL("ALTER TABLE raw_contacts ADD pinned INTEGER NOT NULL DEFAULT  " +
                 ContactsContract.PinnedPositions.UNPINNED + ";");
+    }
+
+
+    private void upgradeToVersion804(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.PHONE_LOOKUP
+                    + " ADD " + PhoneLookupColumns.NORMALIZED + " TEXT NOT NULL DEFAULT '0';");
+            updateSearchIndexTable(db);
+        } catch (SQLException e) {
+            // Shouldn't be here unless we're debugging and interrupt the process.
+            Log.w(TAG, "Exception upgrading contacts2.db to 804 " + e);
+        }
+    }
+
+    private void updateSearchIndexTable(SQLiteDatabase db) {
+        db.execSQL("CREATE VIRTUAL TABLE " + "search_index_temp"
+                + " USING FTS4 ("
+                + SearchIndexColumns.CONTACT_ID + " INTEGER REFERENCES contacts(_id) NOT NULL,"
+                + SearchIndexColumns.CONTENT + " TEXT, "
+                + SearchIndexColumns.NAME + " TEXT, "
+                + SearchIndexColumns.NAME_DIGIT + " TEXT, "
+                + SearchIndexColumns.TOKENS + " TEXT"
+                + ")");
+        db.execSQL("INSERT INTO search_index_temp "
+                + "SELECT contact_id,content,name,NULL,tokens from " + Tables.SEARCH_INDEX);
+        db.execSQL("DROP TABLE IF EXISTS " + Tables.SEARCH_INDEX);
+        db.execSQL("CREATE VIRTUAL TABLE " + Tables.SEARCH_INDEX
+                + " USING FTS4 ("
+                + SearchIndexColumns.CONTACT_ID + " INTEGER REFERENCES contacts(_id) NOT NULL,"
+                + SearchIndexColumns.CONTENT + " TEXT, "
+                + SearchIndexColumns.NAME + " TEXT, "
+                + SearchIndexColumns.NAME_DIGIT + " TEXT, "
+                + SearchIndexColumns.TOKENS + " TEXT"
+                + ")");
+        db.execSQL("INSERT INTO " + Tables.SEARCH_INDEX
+                + " SELECT contact_id,content,name,name_digit,tokens from search_index_temp");
+        db.execSQL("DROP TABLE IF EXISTS search_index_temp");
+        updateSqliteStats(db);
     }
 
     public String extractHandleFromEmailAddress(String email) {
