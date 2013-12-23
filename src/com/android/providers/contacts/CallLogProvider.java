@@ -89,7 +89,7 @@ public class CallLogProvider extends ContentProvider {
         sCallsProjectionMap.put(Calls.CACHED_PHOTO_ID, Calls.CACHED_PHOTO_ID);
         sCallsProjectionMap.put(Calls.CACHED_FORMATTED_NUMBER, Calls.CACHED_FORMATTED_NUMBER);
 
-        // To match the DSDS, add the subscription for the call log to mark the call log state.
+        // To match the multisim, add the subscription for the call log to mark the call log state.
         sCallsProjectionMap.put(Calls.SUBSCRIPTION, Calls.SUBSCRIPTION);
     }
 
