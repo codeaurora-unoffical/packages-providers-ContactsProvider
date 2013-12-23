@@ -4045,7 +4045,6 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 ContactsContract.PinnedPositions.UNPINNED + ";");
     }
 
-
     private void upgradeToVersion804(SQLiteDatabase db) {
         try {
             db.execSQL("ALTER TABLE " + Tables.PHONE_LOOKUP
