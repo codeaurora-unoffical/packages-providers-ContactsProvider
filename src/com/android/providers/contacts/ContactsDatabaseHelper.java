@@ -115,7 +115,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   800-899 Kitkat
      * </pre>
      */
-    static final int DATABASE_VERSION = 804;
+    static final int DATABASE_VERSION = 810;
 
     private static final String DATABASE_NAME = "contacts2.db";
     private static final String DATABASE_PRESENCE = "presence_db";
@@ -1295,7 +1295,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.SOURCE_DATA + " TEXT," +
                 Voicemails.SOURCE_PACKAGE + " TEXT," +
                 Voicemails.STATE + " INTEGER," +
-                Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0" +
+                Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0," +
+                Calls.DURATION_TYPE + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE +
         ");");
 
         // Voicemail source status table.
@@ -2530,6 +2531,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 804) {
             upgradeToVersion804(db);
             oldVersion = 804;
+        }
+
+        if (oldVersion < 810) {
+            // add the type of call duration
+            upgradeToVersion810(db);
+            oldVersion = 810;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -4039,6 +4046,15 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                     + " ADD " + Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0;");
         } catch (SQLException e) {
             Log.w(TAG, "Exception upgrading contacts2.db from 803 to 804 " + e);
+        }
+    }
+
+    private void upgradeToVersion810(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + Calls.DURATION_TYPE
+                    + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE + ";");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db to 810 " + e);
         }
     }
 
