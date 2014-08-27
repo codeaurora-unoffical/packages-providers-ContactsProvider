@@ -19,7 +19,6 @@ package com.android.providers.contacts;
 import static com.android.providers.contacts.util.DbQueryUtils.checkForSupportedColumns;
 import static com.android.providers.contacts.util.DbQueryUtils.getEqualityClause;
 import static com.android.providers.contacts.util.DbQueryUtils.getInequalityClause;
-
 import android.app.AppOpsManager;
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -42,7 +41,6 @@ import com.android.providers.contacts.ContactsDatabaseHelper.DbProperties;
 import com.android.providers.contacts.ContactsDatabaseHelper.Tables;
 import com.android.providers.contacts.util.SelectionBuilder;
 import com.android.providers.contacts.util.UserUtils;
-
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.HashMap;
@@ -323,6 +321,10 @@ public class CallLogProvider extends ContentProvider {
             case CALLS:
                 return getDatabaseModifier(db).delete(Tables.CALLS,
                         selectionBuilder.build(), selectionArgs);
+            case CALLS_ID:
+                return getDatabaseModifier(db).delete(Tables.CALLS,
+                        new SelectionBuilder(Calls._ID + "=?").build(),
+                        new String[] { uri.getLastPathSegment() });
             default:
                 throw new UnsupportedOperationException("Cannot delete that URL: " + uri);
         }
