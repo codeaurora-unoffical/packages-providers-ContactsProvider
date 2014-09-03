@@ -232,6 +232,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private static final int BACKGROUND_TASK_CHANGE_LOCALE = 9;
     private static final int BACKGROUND_TASK_CLEANUP_PHOTOS = 10;
     private static final int BACKGROUND_TASK_CLEAN_DELETE_LOG = 11;
+    private static final int BACKGROUND_TASK_ADD_DEFAULT_CONTACTS = 12;
 
     /** Default for the maximum number of returned aggregation suggestions. */
     private static final int DEFAULT_MAX_SUGGESTIONS = 5;
@@ -259,6 +260,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private static final String PREAUTHORIZED_URI_TOKEN = "perm_token";
 
     private static final String PREF_LOCALE = "locale";
+
+    private static final String PREF_HAS_ADDED_DEFAULT_CONTACTS = "has_added_defalut_contacts";
 
     private static final int PROPERTY_AGGREGATION_ALGORITHM_VERSION = 3;
 
@@ -1540,6 +1543,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         scheduleBackgroundTask(BACKGROUND_TASK_OPEN_WRITE_ACCESS);
         scheduleBackgroundTask(BACKGROUND_TASK_CLEANUP_PHOTOS);
         scheduleBackgroundTask(BACKGROUND_TASK_CLEAN_DELETE_LOG);
+        scheduleBackgroundTask(BACKGROUND_TASK_ADD_DEFAULT_CONTACTS);
 
         return true;
     }
@@ -1753,6 +1757,16 @@ public class ContactsProvider2 extends AbstractContactsProvider
             case BACKGROUND_TASK_CLEAN_DELETE_LOG: {
                 final SQLiteDatabase db = mDbHelper.get().getWritableDatabase();
                 DeletedContactsTableUtil.deleteOldLogs(db);
+                break;
+            }
+
+            case BACKGROUND_TASK_ADD_DEFAULT_CONTACTS: {
+                final SharedPreferences prefs =
+                        PreferenceManager.getDefaultSharedPreferences(getContext());
+                if (!prefs.getBoolean(PREF_HAS_ADDED_DEFAULT_CONTACTS, false)) {
+                    addDefaultContacts();
+                    prefs.edit().putBoolean(PREF_HAS_ADDED_DEFAULT_CONTACTS, true).commit();
+                }
                 break;
             }
         }
@@ -9355,5 +9369,55 @@ public class ContactsProvider2 extends AbstractContactsProvider
     @NeededForTesting
     public void switchToProfileModeForTest() {
         switchToProfileMode();
+    }
+
+    private void addDefaultContacts() {
+        Context context = getContext();
+        Resources resources = context.getResources();
+        int contactNum = resources.getInteger(R.integer.preloaded_contacts_num);
+        if (contactNum == 0) {
+            return;
+        }
+        String[] names = resources.getStringArray(R.array.preloaded_contacts_name);
+        String[] numbers = resources.getStringArray(R.array.preloaded_contacts_number);
+        String[] emails = resources.getStringArray(R.array.preloaded_contacts_email);
+        try {
+            for (int i = 0; i < contactNum; i++) {
+                String name = names[i];
+                String number = numbers[i];
+                String email = emails[i];
+                addContact(context, name, number, email);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Get Exception: " + e.toString());
+        }
+    }
+
+    private void addContact(Context context, String name, String number, String email) {
+        ContentValues values = new ContentValues();
+        values.put(RawContacts.ACCOUNT_TYPE, AccountWithDataSet.ACCOUNT_TYPE_PHONE);
+        values.put(RawContacts.ACCOUNT_NAME, AccountWithDataSet.PHONE_NAME);
+        Uri rawContactUri = context.getContentResolver().insert(RawContacts.CONTENT_URI, values);
+        long rawContactId = ContentUris.parseId(rawContactUri);
+
+        values.clear();
+        values.put(Data.RAW_CONTACT_ID, rawContactId);
+        values.put(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE);
+        values.put(StructuredName.GIVEN_NAME, name);
+        context.getContentResolver().insert(Data.CONTENT_URI, values);
+
+        values.clear();
+        values.put(Data.RAW_CONTACT_ID, rawContactId);
+        values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
+        values.put(Phone.NUMBER, number);
+        values.put(Phone.TYPE, Phone.TYPE_ASSISTANT);
+        context.getContentResolver().insert(Data.CONTENT_URI, values);
+
+        values.clear();
+        values.put(Data.RAW_CONTACT_ID, rawContactId);
+        values.put(Data.MIMETYPE, Email.CONTENT_ITEM_TYPE);
+        values.put(Email.DATA, email);
+        values.put(Email.TYPE, Email.TYPE_OTHER);
+        context.getContentResolver().insert(Data.CONTENT_URI, values);
     }
 }
