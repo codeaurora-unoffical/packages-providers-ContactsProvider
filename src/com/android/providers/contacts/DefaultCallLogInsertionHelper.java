@@ -19,6 +19,8 @@ package com.android.providers.contacts;
 import android.content.ContentValues;
 import android.content.Context;
 import android.provider.CallLog.Calls;
+import android.net.Uri;
+import android.os.Bundle;
 import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 
@@ -49,6 +51,7 @@ import java.util.Set;
     private PhoneNumberUtil mPhoneNumberUtil;
     private PhoneNumberOfflineGeocoder mPhoneNumberOfflineGeocoder;
     private final Locale mLocale;
+    private Context mContext;
 
     public static synchronized DefaultCallLogInsertionHelper getInstance(Context context) {
         if (sInstance == null) {
@@ -60,6 +63,7 @@ import java.util.Set;
     private DefaultCallLogInsertionHelper(Context context) {
         mCountryMonitor = new CountryMonitor(context);
         mLocale = context.getResources().getConfiguration().locale;
+        mContext = context;
     }
 
     @Override
@@ -115,6 +119,19 @@ import java.util.Set;
 
     @Override
     public String getGeocodedLocationFor(String number, String countryIso) {
+        if (!TextUtils.isEmpty(number)) {
+            Uri CONTENT_URI = Uri.parse("content://geocoded_location/location");
+            String METHOD_QUERY = "getLocation";
+            String RESULT_ADDRESS = "location";
+            if (mContext.getContentResolver().acquireProvider(CONTENT_URI) != null) {
+                Bundle result = mContext.getContentResolver().call(CONTENT_URI, METHOD_QUERY,
+                        number, null);
+                String address = result.getString(RESULT_ADDRESS);
+                if (result != null && address != null) {
+                    return address;
+                }
+            }
+        }
         PhoneNumber structuredPhoneNumber = parsePhoneNumber(number, countryIso);
         if (structuredPhoneNumber != null) {
             return getPhoneNumberOfflineGeocoder().getDescriptionForNumber(
