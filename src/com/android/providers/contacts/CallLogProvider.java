@@ -34,9 +34,11 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.android.internal.telephony.PhoneConstants;
 import com.android.providers.contacts.ContactsDatabaseHelper.DbProperties;
 import com.android.providers.contacts.ContactsDatabaseHelper.Tables;
 import com.android.providers.contacts.util.SelectionBuilder;
@@ -71,6 +73,10 @@ public class CallLogProvider extends ContentProvider {
         Calls.PHONE_ACCOUNT_COMPONENT_NAME,
         Calls.PHONE_ACCOUNT_ID
     };
+
+    private static final String CALLS_OPERATOR = "operator";
+
+    private static final int INVALID_SUBSCRIPTION = -1;
 
     private static final int CALLS = 1;
 
@@ -115,6 +121,7 @@ public class CallLogProvider extends ContentProvider {
         sCallsProjectionMap.put(Calls.CACHED_NORMALIZED_NUMBER, Calls.CACHED_NORMALIZED_NUMBER);
         sCallsProjectionMap.put(Calls.CACHED_PHOTO_ID, Calls.CACHED_PHOTO_ID);
         sCallsProjectionMap.put(Calls.CACHED_FORMATTED_NUMBER, Calls.CACHED_FORMATTED_NUMBER);
+        sCallsProjectionMap.put(CALLS_OPERATOR, CALLS_OPERATOR);
     }
 
     private ContactsDatabaseHelper mDbHelper;
@@ -256,6 +263,13 @@ public class CallLogProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
+        if (values.containsKey(Calls.SUB_ID)) {
+            int subscription = values.getAsInteger(Calls.SUB_ID);
+            if (subscription > INVALID_SUBSCRIPTION) {
+                String operator = getNetworkSpnName(subscription);
+                values.put(CALLS_OPERATOR, operator);
+            }
+        }
         checkForSupportedColumns(sCallsProjectionMap, values);
         // Inserting a voicemail record through call_log requires the voicemail
         // permission and also requires the additional voicemail param set.
@@ -334,6 +348,31 @@ public class CallLogProvider extends ContentProvider {
     // overridden.
     protected Context context() {
         return getContext();
+    }
+
+    private String getNetworkSpnName(int subscription) {
+        TelephonyManager tm = (TelephonyManager)
+                context().getSystemService(Context.TELEPHONY_SERVICE);
+        String netSpnName = "";
+        netSpnName = tm.getNetworkOperatorName(subscription);
+        if (TextUtils.isEmpty(netSpnName)) {
+            // if could not get the operator name, use account name instead of
+            if (tm.isMultiSimEnabled()) {
+                netSpnName = "SIM" + (subscription + 1);
+            } else {
+                netSpnName = "SIM";
+            }
+        }
+        return toUpperCaseFirstOne(netSpnName);
+    }
+
+    private String toUpperCaseFirstOne(String s) {
+        if (Character.isUpperCase(s.charAt(0))) {
+            return s;
+        } else {
+            return (new StringBuilder()).append(Character.toUpperCase(s.charAt(0)))
+                    .append(s.substring(1)).toString();
+        }
     }
 
     /**

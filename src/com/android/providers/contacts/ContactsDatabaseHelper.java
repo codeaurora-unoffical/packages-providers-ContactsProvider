@@ -121,6 +121,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      */
     static final int DATABASE_VERSION = 911;
 
+    private static final String CALLS_OPERATOR = "operator";
+
     public interface Tables {
         public static final String CONTACTS = "contacts";
         public static final String DELETED_CONTACTS = "deleted_contacts";
@@ -1504,6 +1506,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.SOURCE_PACKAGE + " TEXT," +
                 Voicemails.TRANSCRIPTION + " TEXT," +
                 Voicemails.STATE + " INTEGER" +
+                CALLS_OPERATOR + " TEXT" +
         ");");
 
         // Voicemail source status table.
@@ -2814,6 +2817,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         }
 
         if (oldVersion < 911) {
+            upgradeToVersion911(db);
+            oldVersion = 911;
+        }
+
+        if (oldVersion < 911) {
+            // add operator column to calls
             upgradeToVersion911(db);
             oldVersion = 911;
         }
@@ -4278,6 +4287,14 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
     private void upgradeToVersion911(SQLiteDatabase db) {
         db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + Calls.DURATION_TYPE
                 + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE + ";");
+    }
+
+    private void upgradeToVersion911(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + CALLS_OPERATOR + " TEXT" + ";");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 910 to 911 " + e);
+        }
     }
 
     public String extractHandleFromEmailAddress(String email) {
