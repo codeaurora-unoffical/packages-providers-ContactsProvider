@@ -93,6 +93,9 @@ public class CallLogProvider extends ContentProvider {
         sCallsProjectionMap.put(Calls.SUBSCRIPTION, Calls.SUBSCRIPTION);
 
         sCallsProjectionMap.put(Calls.DURATION_TYPE, Calls.DURATION_TYPE);
+
+        // add the video call duration for the call log details.
+        sCallsProjectionMap.put(Calls.VIDEO_CALL_DURATION, Calls.VIDEO_CALL_DURATION);
     }
 
     private ContactsDatabaseHelper mDbHelper;
