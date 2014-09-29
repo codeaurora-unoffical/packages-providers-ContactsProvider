@@ -1300,7 +1300,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.SOURCE_PACKAGE + " TEXT," +
                 Voicemails.STATE + " INTEGER," +
                 Calls.SUBSCRIPTION + " INTEGER NOT NULL DEFAULT 0," +
-                Calls.DURATION_TYPE + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE +
+                Calls.DURATION_TYPE + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE + "," +
+                Calls.VIDEO_CALL_DURATION + " TEXT" +
         ");");
 
         // Voicemail source status table.
@@ -2555,6 +2556,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // add the type of call duration
             upgradeToVersion806(db);
             oldVersion = 806;
+        }
+
+        if (oldVersion < 808) {
+            // add the video call duration for ims call
+            upgradeToVersion808(db);
+            oldVersion = 808;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -4110,6 +4117,15 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                     + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE + ";");
         } catch (SQLException e) {
             Log.w(TAG, "Exception upgrading contacts2.db from 805 to 806 " + e);
+        }
+    }
+
+    private void upgradeToVersion808(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD "
+                    + Calls.VIDEO_CALL_DURATION + " TEXT " + ";");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 806 to 808 " + e);
         }
     }
 
