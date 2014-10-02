@@ -1505,7 +1505,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.SOURCE_DATA + " TEXT," +
                 Voicemails.SOURCE_PACKAGE + " TEXT," +
                 Voicemails.TRANSCRIPTION + " TEXT," +
-                Voicemails.STATE + " INTEGER" +
+                Voicemails.STATE + " INTEGER," +
                 CALLS_OPERATOR + " TEXT" +
         ");");
 
