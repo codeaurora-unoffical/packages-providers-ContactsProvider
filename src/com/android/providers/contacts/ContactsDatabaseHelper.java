@@ -2817,11 +2817,6 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         }
 
         if (oldVersion < 911) {
-            upgradeToVersion911(db);
-            oldVersion = 911;
-        }
-
-        if (oldVersion < 911) {
             // add operator column to calls
             upgradeToVersion911(db);
             oldVersion = 911;
@@ -4282,11 +4277,6 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         if (user.isManagedProfile()) {
             db.execSQL("DELETE FROM calls;");
         }
-    }
-
-    private void upgradeToVersion911(SQLiteDatabase db) {
-        db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + Calls.DURATION_TYPE
-                + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE + ";");
     }
 
     private void upgradeToVersion911(SQLiteDatabase db) {
