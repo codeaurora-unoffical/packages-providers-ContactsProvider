@@ -6409,6 +6409,12 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
                 setTablesAndProjectionMapForContacts(qb, projection);
 
+            String withoutSim = getQueryParameter(uri, WITHOUT_SIM_FLAG);
+                if ("true".equals(withoutSim)) {
+                    return mAggregator.get().queryAggregationSuggestions(qb, projection,
+                            contactId, maxSuggestions, filter, parameters, true);
+                }
+
                 return mAggregator.get().queryAggregationSuggestions(qb, projection, contactId,
                         maxSuggestions, filter, parameters);
             }

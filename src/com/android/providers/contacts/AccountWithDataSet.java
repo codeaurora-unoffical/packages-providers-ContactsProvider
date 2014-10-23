@@ -27,6 +27,7 @@ import com.google.common.base.Objects;
 public class AccountWithDataSet {
     public static final String PHONE_NAME = "PHONE";
     public static final String ACCOUNT_TYPE_PHONE = "com.android.localphone";
+    public static final String ACCOUNT_TYPE_SIM = "com.android.sim";
     public static final AccountWithDataSet LOCAL = new AccountWithDataSet(
             PHONE_NAME, ACCOUNT_TYPE_PHONE, null);
 
