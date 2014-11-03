@@ -5021,7 +5021,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
     public void buildPhoneLookupAndContactQuery(
             SQLiteQueryBuilder qb, String normalizedNumber, String numberE164) {
 
-        String minMatch = PhoneNumberUtils.toCallerIDMinMatch(normalizedNumber);
+        String minMatch = PhoneNumberUtils.toCallerIDMinMatch(TextUtils.isEmpty(numberE164)
+                ? normalizedNumber : numberE164);
         StringBuilder sb = new StringBuilder();
         appendPhoneLookupTables(sb, minMatch, true);
         qb.setTables(sb.toString());
