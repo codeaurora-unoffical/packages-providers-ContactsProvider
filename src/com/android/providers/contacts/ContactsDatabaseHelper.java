@@ -284,11 +284,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
          */
         public static final String GROUP_MEMBER_COUNT =
                 " LEFT OUTER JOIN (SELECT "
-                        + "data.data1 AS member_count_group_id, "
-                        + "COUNT(data.raw_contact_id) AS group_member_count "
-                    + "FROM data "
+                        + "view_data.data1 AS member_count_group_id, "
+                        + "COUNT(DISTINCT view_data.contact_id) AS group_member_count "
+                    + "FROM view_data "
                     + "WHERE "
-                        + "data.mimetype_id = (SELECT _id FROM mimetypes WHERE "
+                        + "view_data.mimetype_id = (SELECT _id FROM mimetypes WHERE "
                             + "mimetypes.mimetype = '" + GroupMembership.CONTENT_ITEM_TYPE + "')"
                     + "GROUP BY member_count_group_id) AS member_count_table" // End of inner query
                 + " ON (groups._id = member_count_table.member_count_group_id)";
