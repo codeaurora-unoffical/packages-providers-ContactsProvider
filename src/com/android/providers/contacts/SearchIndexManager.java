@@ -457,6 +457,9 @@ public class SearchIndexManager {
         public static final FtsQueryBuilder SCOPED_NAME_NORMALIZING =
                 new ScopedNameNormalizingBuilder();
 
+        public static final FtsQueryBuilder SCOPED_NAME_ONLY_NORMALIZING =
+                new ScopedNameOnlyNormalizingBuilder();
+
         /**
          * Scopes each token to a the content column and also for name with normalization.
          * Also adds a user-defined expression to each token. This allows common criteria to be
@@ -518,6 +521,19 @@ public class SearchIndexManager {
             builder.append(" OR tokens:");
             builder.append(token);
             builder.append("*");
+        }
+    }
+
+    private static class ScopedNameOnlyNormalizingBuilder extends FtsQueryBuilder {
+        @Override
+        public void addToken(StringBuilder builder, String token) {
+            if (builder.length() != 0) builder.append(' ');
+            final String normalizedToken = NameNormalizer.normalize(token);
+            if (!TextUtils.isEmpty(normalizedToken)) {
+                builder.append("name:");
+                builder.append(normalizedToken);
+                builder.append('*');
+            }
         }
     }
 }
