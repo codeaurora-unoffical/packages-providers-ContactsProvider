@@ -7320,6 +7320,9 @@ public class ContactsProvider2 extends AbstractContactsProvider
             StringBuilder sb, Uri uri, String[] projection, String filter,
             boolean  deferSnippeting) {
 
+        String param = getQueryParameter(uri, "fts_name_only");
+        boolean ftsNameOnly = (!TextUtils.isEmpty(param) && param.equals("1"));
+
         if (snippetNeeded(projection)) {
             String[] args = null;
             String snippetArgs =
@@ -7337,16 +7340,23 @@ public class ContactsProvider2 extends AbstractContactsProvider
             int maxTokens = args != null && args.length > 3 ? Integer.parseInt(args[3])
                     : DEFAULT_SNIPPET_ARG_MAX_TOKENS;
 
-            appendSearchIndexJoin(
-                    sb, filter, true, startMatch, endMatch, ellipsis, maxTokens, deferSnippeting);
+            appendSearchIndexJoin(sb, filter, true, startMatch, endMatch,
+                    ellipsis, maxTokens, deferSnippeting, ftsNameOnly);
         } else {
-            appendSearchIndexJoin(sb, filter, false, null, null, null, 0, false);
+            appendSearchIndexJoin(sb, filter, false, null, null, null, 0, false, ftsNameOnly);
         }
     }
 
     public void appendSearchIndexJoin(StringBuilder sb, String filter,
             boolean snippetNeeded, String startMatch, String endMatch, String ellipsis,
             int maxTokens, boolean deferSnippeting) {
+        appendSearchIndexJoin(sb, filter, snippetNeeded, startMatch, endMatch,
+                ellipsis, maxTokens, deferSnippeting, false);
+    }
+
+    public void appendSearchIndexJoin(StringBuilder sb, String filter,
+            boolean snippetNeeded, String startMatch, String endMatch, String ellipsis,
+            int maxTokens, boolean deferSnippeting, boolean ftsNameOnly) {
         boolean isEmailAddress = false;
         String emailAddress = null;
         boolean isPhoneNumber = false;
@@ -7364,6 +7374,11 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 numberE164 = PhoneNumberUtils.formatNumberToE164(phoneNumber,
                         mDbHelper.get().getCurrentCountryIso());
             }
+        }
+
+        if (ftsNameOnly) {
+            isEmailAddress = false;
+            isPhoneNumber = false;
         }
 
         final String SNIPPET_CONTACT_ID = "snippet_contact_id";
@@ -7550,9 +7565,14 @@ public class ContactsProvider2 extends AbstractContactsProvider
             sb.append(SearchIndexManager.getFtsMatchQuery(filter,
                     FtsQueryBuilder.getDigitsQueryBuilder(commonCriteria)));
         } else {
-            // general case: not a phone number, not an email-address
-            sb.append(SearchIndexManager.getFtsMatchQuery(filter,
-                    FtsQueryBuilder.SCOPED_NAME_NORMALIZING));
+            if (ftsNameOnly) {
+                sb.append(SearchIndexManager.getFtsMatchQuery(filter,
+                        FtsQueryBuilder.SCOPED_NAME_ONLY_NORMALIZING));
+            } else {
+                // general case: not a phone number, not an email-address
+                sb.append(SearchIndexManager.getFtsMatchQuery(filter,
+                        FtsQueryBuilder.SCOPED_NAME_NORMALIZING));
+            }
         }
         // Omit results in "Other Contacts".
         sb.append("' AND " + SNIPPET_CONTACT_ID + " IN " + Tables.DEFAULT_DIRECTORY + ")");
