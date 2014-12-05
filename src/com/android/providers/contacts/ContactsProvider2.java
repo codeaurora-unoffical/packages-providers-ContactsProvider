@@ -6947,7 +6947,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
      */
     public long lookupContactIdByLookupKey(SQLiteDatabase db, String lookupKey) {
         ContactLookupKey key = new ContactLookupKey();
-        ArrayList<LookupKeySegment> segments = key.parse(lookupKey);
+        final String[] lookupKeyList = lookupKey.split(":");
+        ArrayList<LookupKeySegment> segments = key.parse(lookupKeyList[0]);
 
         long contactId = -1;
         if (lookupKeyContainsType(segments, ContactLookupKey.LOOKUP_TYPE_PROFILE)) {
