@@ -7418,7 +7418,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                     DatabaseUtils.appendEscapedSQLString(sb, startMatch);
                     sb.append("||");
                 }
-                sb.append("(SELECT MIN(" + PhoneLookupColumns.NORMALIZED_NUMBER + ")");
+                sb.append("(SELECT MIN(" + Phone.NUMBER + ")");
                 sb.append(" FROM " +
                         Tables.DATA_JOIN_RAW_CONTACTS + " JOIN " + Tables.PHONE_LOOKUP);
                 sb.append(" ON " + DataColumns.CONCRETE_ID);
@@ -7504,7 +7504,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                     DatabaseUtils.appendEscapedSQLString(sb, startMatch);
                     sb.append("||");
                 }
-                sb.append("(SELECT MIN(" + PhoneLookupColumns.NORMALIZED_NUMBER + ")");
+                sb.append("(SELECT MIN(" + Phone.NUMBER + ")");
                 sb.append(" FROM " +
                         Tables.DATA_JOIN_RAW_CONTACTS + " JOIN " + Tables.PHONE_LOOKUP);
                 sb.append(" ON " + DataColumns.CONCRETE_ID);
