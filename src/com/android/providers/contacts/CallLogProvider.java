@@ -34,6 +34,8 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
+import android.telephony.SubInfoRecord;
+import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -263,8 +265,8 @@ public class CallLogProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        if (values.containsKey(Calls.SUB_ID)) {
-            int subscription = values.getAsInteger(Calls.SUB_ID);
+        if (values.containsKey(Calls.PHONE_ACCOUNT_ID)) {
+            long subscription = values.getAsLong(Calls.PHONE_ACCOUNT_ID);
             if (subscription > INVALID_SUBSCRIPTION) {
                 String operator = getNetworkSpnName(subscription);
                 values.put(CALLS_OPERATOR, operator);
@@ -350,23 +352,31 @@ public class CallLogProvider extends ContentProvider {
         return getContext();
     }
 
-    private String getNetworkSpnName(int subscription) {
+    private String getNetworkSpnName(long subscription) {
         TelephonyManager tm = (TelephonyManager)
                 context().getSystemService(Context.TELEPHONY_SERVICE);
         String netSpnName = "";
         netSpnName = tm.getNetworkOperatorName(subscription);
         if (TextUtils.isEmpty(netSpnName)) {
-            // if could not get the operator name, use account name instead of
-            if (tm.isMultiSimEnabled()) {
-                netSpnName = "SIM" + (subscription + 1);
-            } else {
-                netSpnName = "SIM";
+            // if could not get the operator name, use sim name instead of
+            List<SubInfoRecord> subInfoList = SubscriptionManager.getActiveSubInfoList();
+            if (subInfoList != null) {
+                for (int i = 0; i < subInfoList.size(); ++i) {
+                    final SubInfoRecord sir = subInfoList.get(i);
+                    if (sir.subId == subscription) {
+                        netSpnName = sir.displayName;
+                        break;
+                    }
+                }
             }
         }
         return toUpperCaseFirstOne(netSpnName);
     }
 
     private String toUpperCaseFirstOne(String s) {
+        if (TextUtils.isEmpty(s)) {
+            return s;
+        }
         if (Character.isUpperCase(s.charAt(0))) {
             return s;
         } else {
