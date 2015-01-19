@@ -313,10 +313,14 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         String LOCAL_ACCOUNT_ID =
                 "(SELECT " + AccountsColumns._ID +
                 " FROM " + Tables.ACCOUNTS +
-                " WHERE " +
+                " WHERE (" +
                     AccountsColumns.ACCOUNT_NAME + " IS NULL AND " +
                     AccountsColumns.ACCOUNT_TYPE + " IS NULL AND " +
-                    AccountsColumns.DATA_SET + " IS NULL)";
+                    AccountsColumns.DATA_SET + " IS NULL" + ") OR (" +
+                    AccountsColumns.ACCOUNT_NAME + "='" + AccountWithDataSet.PHONE_NAME +
+                    "' AND " + AccountsColumns.ACCOUNT_TYPE + "='" +
+                    AccountWithDataSet.ACCOUNT_TYPE_PHONE + "' AND " +
+                    AccountsColumns.DATA_SET + " IS NULL))";
 
         final String RAW_CONTACT_IS_LOCAL = RawContactsColumns.CONCRETE_ACCOUNT_ID
                 + "=" + LOCAL_ACCOUNT_ID;
