@@ -71,6 +71,7 @@ public class ContactLocaleUtils {
         protected final ImmutableIndex mAlphabeticIndex;
         private final int mAlphabeticIndexBucketCount;
         private final int mNumberBucketIndex;
+        private final boolean isPrimaryLocaleSimplifiedChinese;
         private final boolean mEnableSecondaryLocalePinyin;
 
         public ContactLocaleUtilsBase(LocaleSet locales) {
@@ -87,6 +88,7 @@ public class ContactLocaleUtils {
             // Cyrillic because their alphabets are complementary supersets
             // of Russian.
             final Locale secondaryLocale = locales.getSecondaryLocale();
+            isPrimaryLocaleSimplifiedChinese = locales.isPrimaryLocaleSimplifiedChinese();
             mEnableSecondaryLocalePinyin = locales.isSecondaryLocaleSimplifiedChinese();
             AlphabeticIndex ai = new AlphabeticIndex(locales.getPrimaryLocale())
                 .setMaxLabelCount(300);
@@ -147,7 +149,7 @@ public class ContactLocaleUtils {
              * TODO: ICU 52 AlphabeticIndex doesn't support Simplified Chinese
              * as a secondary locale. Remove the following if that is added.
              */
-            if (mEnableSecondaryLocalePinyin) {
+            if (mEnableSecondaryLocalePinyin || isPrimaryLocaleSimplifiedChinese) {
                 name = HanziToPinyin.getInstance().transliterate(name);
             }
             final int bucket = mAlphabeticIndex.getBucketIndex(name);
