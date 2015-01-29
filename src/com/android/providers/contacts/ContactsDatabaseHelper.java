@@ -119,7 +119,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   900-999 L
      * </pre>
      */
-    static final int DATABASE_VERSION = 911;
+    static final int DATABASE_VERSION = 913;
 
     private static final String CALLS_OPERATOR = "operator";
 
@@ -440,6 +440,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String DISPLAY_NAME = RawContacts.DISPLAY_NAME_PRIMARY;
         public static final String DISPLAY_NAME_SOURCE = RawContacts.DISPLAY_NAME_SOURCE;
         public static final String AGGREGATION_NEEDED = "aggregation_needed";
+        public static final String LOCAL_PHOTO_SETTED = "local_photo_setted";
 
         public static final String CONCRETE_DISPLAY_NAME =
                 Tables.RAW_CONTACTS + "." + DISPLAY_NAME;
@@ -978,6 +979,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
     private NameSplitter.Name mName = new NameSplitter.Name();
     private CharArrayBuffer mCharArrayBuffer = new CharArrayBuffer(128);
     private NameSplitter mNameSplitter;
+    private final String LOCAL_PHOTO_SETTED = "local_photo_setted";
 
     public static synchronized ContactsDatabaseHelper getInstance(Context context) {
         if (sSingleton == null) {
@@ -1233,7 +1235,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 RawContacts.SYNC1 + " TEXT, " +
                 RawContacts.SYNC2 + " TEXT, " +
                 RawContacts.SYNC3 + " TEXT, " +
-                RawContacts.SYNC4 + " TEXT " +
+                RawContacts.SYNC4 + " TEXT, " +
+                LOCAL_PHOTO_SETTED + " INTEGER NOT NULL DEFAULT 0 " +
         ");");
 
         db.execSQL("CREATE INDEX raw_contacts_contact_id_index ON " + Tables.RAW_CONTACTS + " (" +
@@ -1949,6 +1952,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 + RawContacts.SORT_KEY_ALTERNATIVE + ", "
                 + RawContactsColumns.PHONEBOOK_LABEL_ALTERNATIVE  + ", "
                 + RawContactsColumns.PHONEBOOK_BUCKET_ALTERNATIVE  + ", "
+                + RawContactsColumns.LOCAL_PHOTO_SETTED + ", "
                 + dbForProfile() + " AS " + RawContacts.RAW_CONTACT_IS_USER_PROFILE + ", "
                 + rawContactOptionColumns + ", "
                 + syncColumns
@@ -2824,6 +2828,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // add operator column to calls
             upgradeToVersion911(db);
             oldVersion = 911;
+        }
+
+        if (oldVersion < 913) {
+            // add operator column to calls
+            upgradeToVersion913(db);
+            oldVersion = 913;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -4298,6 +4308,15 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + CALLS_OPERATOR + " TEXT" + ";");
         } catch (SQLException e) {
             Log.w(TAG, "Exception upgrading contacts2.db from 910 to 911 " + e);
+        }
+    }
+
+    private void upgradeToVersion913(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.RAW_CONTACTS + " ADD "
+                + LOCAL_PHOTO_SETTED + " INTEGER NOT NULL DEFAULT 0" + ";");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 911 to 913 " + e);
         }
     }
 

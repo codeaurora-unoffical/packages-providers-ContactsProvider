@@ -259,6 +259,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
      */
     private static final String PREAUTHORIZED_URI_TOKEN = "perm_token";
 
+    private static final String LOCAL_PHOTO_SETTED = "local_photo_setted";
+
     private static final String PREF_LOCALE = "locale";
 
     private static final String PREF_HAS_ADDED_DEFAULT_CONTACTS = "has_added_defalut_contacts";
@@ -852,6 +854,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add(RawContacts.RAW_CONTACT_IS_USER_PROFILE)
             .addAll(sRawContactColumns)
             .addAll(sRawContactSyncColumns)
+            .add(LOCAL_PHOTO_SETTED)
             .build();
 
     /** Contains the columns from the raw entity view*/
