@@ -7501,7 +7501,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 sb.append(" UNION SELECT " + SearchIndexColumns.CONTACT_ID + " AS " +
                         SNIPPET_CONTACT_ID);
                 sb.append(", ");
-                sb.append("ifnull(");
                 if (!deferSnippeting) {
                     // Add the snippet marker only when we're really creating snippet.
                     DatabaseUtils.appendEscapedSQLString(sb, startMatch);
@@ -7522,18 +7521,9 @@ public class ContactsProvider2 extends AbstractContactsProvider
                     sb.append("||");
                     DatabaseUtils.appendEscapedSQLString(sb, endMatch);
                 }
-                sb.append(",");
-
-                if (deferSnippeting) {
-                    sb.append(SearchIndexColumns.CONTENT);
-                } else {
-                    appendSnippetFunction(sb, startMatch, endMatch, ellipsis, maxTokens);
-                }
-                sb.append(")");
                 sb.append(" AS " + SearchSnippets.SNIPPET);
                 sb.append(" FROM " + Tables.SEARCH_INDEX);
-                sb.append(" WHERE " + SearchSnippets.SNIPPET + " LIKE '%" +
-                        phoneNumber + "%'");
+                sb.append(" WHERE " + SearchSnippets.SNIPPET + " IS NOT NULL ");
                 sb.append(" AND " + SNIPPET_CONTACT_ID + " IN " + Tables.DEFAULT_DIRECTORY + ")");
             } else {
                 sb.append(")");
