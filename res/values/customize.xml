@@ -35,4 +35,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <string-array name="preloaded_contacts_number"></string-array>
     <string-array name="preloaded_contacts_email"></string-array>
 
+    <bool name="phone_number_fuzzy_search">false</bool>
+
 </resources>
