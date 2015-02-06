@@ -7367,6 +7367,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
         String phoneNumber = null;
         String numberE164 = null;
 
+        boolean isPhoneNumberFuzzySearchEnabled = getContext().getResources().getBoolean(R.bool
+                .phone_number_fuzzy_search);
 
         if (filter.indexOf('@') != -1) {
             emailAddress = mDbHelper.get().extractAddressFromEmailAddress(filter);
@@ -7495,7 +7497,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
                     FtsQueryBuilder.getDigitsQueryBuilder(commonCriteria)));
             sb.append("' AND " + SNIPPET_CONTACT_ID + " IN "
                     + Tables.DEFAULT_DIRECTORY);
-            if (snippetNeeded) {
+            if (snippetNeeded && isPhoneNumberFuzzySearchEnabled) {
             // only support fuzzy search when there is snippet column and
             // the filter is phone number!
                 sb.append(" UNION SELECT " + SearchIndexColumns.CONTACT_ID + " AS " +
