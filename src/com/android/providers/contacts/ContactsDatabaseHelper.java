@@ -420,6 +420,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         public static final String DISPLAY_NAME = RawContacts.DISPLAY_NAME_PRIMARY;
         public static final String DISPLAY_NAME_SOURCE = RawContacts.DISPLAY_NAME_SOURCE;
         public static final String AGGREGATION_NEEDED = "aggregation_needed";
+        public static final String LOCAL_PHOTO_SETTED = "local_photo_setted";
 
         public static final String CONCRETE_DISPLAY_NAME =
                 Tables.RAW_CONTACTS + "." + DISPLAY_NAME;
@@ -1041,7 +1042,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 RawContacts.SYNC1 + " TEXT, " +
                 RawContacts.SYNC2 + " TEXT, " +
                 RawContacts.SYNC3 + " TEXT, " +
-                RawContacts.SYNC4 + " TEXT " +
+                RawContacts.SYNC4 + " TEXT, " +
+                RawContactsColumns.LOCAL_PHOTO_SETTED + " INTEGER NOT NULL DEFAULT 0 " +
         ");");
 
         db.execSQL("CREATE INDEX raw_contacts_contact_id_index ON " + Tables.RAW_CONTACTS + " (" +
@@ -1749,6 +1751,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 + RawContacts.SORT_KEY_ALTERNATIVE + ", "
                 + RawContactsColumns.PHONEBOOK_LABEL_ALTERNATIVE  + ", "
                 + RawContactsColumns.PHONEBOOK_BUCKET_ALTERNATIVE  + ", "
+                + RawContactsColumns.LOCAL_PHOTO_SETTED + ", "
                 + dbForProfile() + " AS " + RawContacts.RAW_CONTACT_IS_USER_PROFILE + ", "
                 + rawContactOptionColumns + ", "
                 + syncColumns
@@ -2566,6 +2569,12 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             // add the video call duration for ims call
             upgradeToVersion808(db);
             oldVersion = 808;
+        }
+
+        if (oldVersion < 809) {
+            // add operator column to calls
+            upgradeToVersion809(db);
+            oldVersion = 809;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -4121,6 +4130,15 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                     + " INTEGER NOT NULL DEFAULT " + Calls.DURATION_TYPE_ACTIVE + ";");
         } catch (SQLException e) {
             Log.w(TAG, "Exception upgrading contacts2.db from 805 to 806 " + e);
+        }
+    }
+
+    private void upgradeToVersion809(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.RAW_CONTACTS + " ADD "
+                    + RawContactsColumns.LOCAL_PHOTO_SETTED + " INTEGER NOT NULL DEFAULT 0" + ";");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 808 to 809 " + e);
         }
     }
 
