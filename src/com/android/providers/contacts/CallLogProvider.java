@@ -34,7 +34,7 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
-import android.telephony.SubInfoRecord;
+import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -266,7 +266,7 @@ public class CallLogProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         if (values.containsKey(Calls.PHONE_ACCOUNT_ID)) {
-            long subscription = values.getAsLong(Calls.PHONE_ACCOUNT_ID);
+            int subscription = values.getAsInteger(Calls.PHONE_ACCOUNT_ID);
             if (subscription > INVALID_SUBSCRIPTION) {
                 String operator = getNetworkSpnName(subscription);
                 values.put(CALLS_OPERATOR, operator);
@@ -352,19 +352,20 @@ public class CallLogProvider extends ContentProvider {
         return getContext();
     }
 
-    private String getNetworkSpnName(long subscription) {
+    private String getNetworkSpnName(int subscription) {
         TelephonyManager tm = (TelephonyManager)
                 context().getSystemService(Context.TELEPHONY_SERVICE);
         String netSpnName = "";
         netSpnName = tm.getNetworkOperatorName(subscription);
         if (TextUtils.isEmpty(netSpnName)) {
             // if could not get the operator name, use sim name instead of
-            List<SubInfoRecord> subInfoList = SubscriptionManager.getActiveSubInfoList();
+            List<SubscriptionInfo> subInfoList =
+                    SubscriptionManager.from(context()).getActiveSubscriptionInfoList();
             if (subInfoList != null) {
                 for (int i = 0; i < subInfoList.size(); ++i) {
-                    final SubInfoRecord sir = subInfoList.get(i);
-                    if (sir.subId == subscription) {
-                        netSpnName = sir.displayName;
+                    final SubscriptionInfo sir = subInfoList.get(i);
+                    if (sir.getSubscriptionId() == subscription) {
+                        netSpnName = sir.getDisplayName().toString();
                         break;
                     }
                 }
