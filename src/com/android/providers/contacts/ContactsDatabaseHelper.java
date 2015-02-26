@@ -349,8 +349,6 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 "SELECT " +
                     "MAX((SELECT (CASE WHEN " +
                         "(CASE" +
-                            " WHEN " + RAW_CONTACT_IS_LOCAL +
-                            " THEN 1 " +
                             " WHEN " + ZERO_GROUP_MEMBERSHIPS +
                             " THEN " + Settings.UNGROUPED_VISIBLE +
                             " ELSE MAX(" + Groups.GROUP_VISIBLE + ")" +
