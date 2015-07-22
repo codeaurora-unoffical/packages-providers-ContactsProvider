@@ -5854,10 +5854,22 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             if (hasCondition) {
                                 sb.append(" OR ");
                             }
-                            sb.append(Data._ID +
-                                    " IN (SELECT DISTINCT " + PhoneLookupColumns.DATA_ID
-                                    + " FROM " + Tables.PHONE_LOOKUP
-                                    + " WHERE " + PhoneLookupColumns.NORMALIZED_NUMBER + " LIKE '");
+
+                            boolean isPhoneNumberFuzzySearchEnabled = true;
+
+                            if (isPhoneNumberFuzzySearchEnabled) {
+                                sb.append(Data._ID +
+                                        " IN (SELECT DISTINCT " + PhoneLookupColumns.DATA_ID
+                                        + " FROM " + Tables.PHONE_LOOKUP
+                                        + " WHERE " + PhoneLookupColumns.NORMALIZED_NUMBER
+                                        + " LIKE '%");
+                            } else {
+                                sb.append(Data._ID +
+                                        " IN (SELECT DISTINCT " + PhoneLookupColumns.DATA_ID
+                                        + " FROM " + Tables.PHONE_LOOKUP
+                                        + " WHERE " + PhoneLookupColumns.NORMALIZED_NUMBER
+                                        + " LIKE '");
+                            }
                             sb.append(number);
                             sb.append("%')");
                             hasCondition = true;
