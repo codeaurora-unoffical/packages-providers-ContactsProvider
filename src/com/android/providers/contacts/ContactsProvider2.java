@@ -5854,10 +5854,22 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             if (hasCondition) {
                                 sb.append(" OR ");
                             }
-                            sb.append(Data._ID +
-                                    " IN (SELECT DISTINCT " + PhoneLookupColumns.DATA_ID
-                                    + " FROM " + Tables.PHONE_LOOKUP
-                                    + " WHERE " + PhoneLookupColumns.NORMALIZED_NUMBER + " LIKE '");
+
+                            boolean isPhoneNumberFuzzySearchEnabled = true;
+
+                            if (isPhoneNumberFuzzySearchEnabled) {
+                                sb.append(Data._ID +
+                                        " IN (SELECT DISTINCT " + PhoneLookupColumns.DATA_ID
+                                        + " FROM " + Tables.PHONE_LOOKUP
+                                        + " WHERE " + PhoneLookupColumns.NORMALIZED_NUMBER
+                                        + " LIKE '%");
+                            } else {
+                                sb.append(Data._ID +
+                                        " IN (SELECT DISTINCT " + PhoneLookupColumns.DATA_ID
+                                        + " FROM " + Tables.PHONE_LOOKUP
+                                        + " WHERE " + PhoneLookupColumns.NORMALIZED_NUMBER
+                                        + " LIKE '");
+                            }
                             sb.append(number);
                             sb.append("%')");
                             hasCondition = true;
@@ -6950,7 +6962,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
      */
     public long lookupContactIdByLookupKey(SQLiteDatabase db, String lookupKey) {
         ContactLookupKey key = new ContactLookupKey();
-        final String[] lookupKeyList = lookupKey.split(":");
+        final String[] lookupKeyList = lookupKey.split("&");
         ArrayList<LookupKeySegment> segments = key.parse(lookupKeyList[0]);
 
         long contactId = -1;
@@ -8281,7 +8293,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
             case CONTACTS_AS_MULTI_VCARD: {
                 final String lookupKeys = uri.getPathSegments().get(2);
-                final String[] lookupKeyList = lookupKeys.split(":");
+                final String[] lookupKeyList = lookupKeys.split("&");
                 final StringBuilder inBuilder = new StringBuilder();
                 Uri queryUri = Contacts.CONTENT_URI;
 
