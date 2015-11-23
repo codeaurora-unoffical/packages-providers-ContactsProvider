@@ -121,7 +121,9 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   1000-1099 M
      * </pre>
      */
-    static final int DATABASE_VERSION = 1011;
+    static final int DATABASE_VERSION = 1012;
+
+    public static final String CALLS_OPERATOR = "operator";
 
     public interface Tables {
         public static final String CONTACTS = "contacts";
@@ -1535,7 +1537,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 Voicemails.TRANSCRIPTION + " TEXT," +
                 Voicemails.STATE + " INTEGER," +
                 Voicemails.DIRTY + " INTEGER NOT NULL DEFAULT 0," +
-                Voicemails.DELETED + " INTEGER NOT NULL DEFAULT 0" +
+                Voicemails.DELETED + " INTEGER NOT NULL DEFAULT 0," +
+                CALLS_OPERATOR + " TEXT" +
         ");");
 
         // Voicemail source status table.
@@ -2913,6 +2916,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             rebuildSqliteStats = true;
             upgradeViewsAndTriggers = true;
             oldVersion = 1011;
+        }
+
+        if (oldVersion < 1012) {
+            upgradeToVersion1012(db);
+            oldVersion = 1012;
         }
 
         if (upgradeViewsAndTriggers) {
@@ -4462,6 +4470,13 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
 
     public void upgradeToVersion1010(SQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS metadata_sync");
+    }
+    private void upgradeToVersion1012(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + CALLS_OPERATOR + " TEXT" + ";");
+        } catch (SQLException e) {
+            Log.w(TAG, "Exception upgrading contacts2.db from 1011 to 1012 " + e);
+        }
     }
 
     public String extractHandleFromEmailAddress(String email) {
