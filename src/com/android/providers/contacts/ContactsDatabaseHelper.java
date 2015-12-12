@@ -463,6 +463,10 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
          * column with the same name.
          */
         public static final String NAME_VERIFIED_OBSOLETE = "name_verified";
+        /* Begin add for RCS */
+        public static final String LOCAL_PHOTO_SETTED = "local_photo_setted";
+        /* End add for RCS */
+
     }
 
     public interface ViewRawContactsColumns {
@@ -1247,7 +1251,8 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 RawContacts.SYNC1 + " TEXT, " +
                 RawContacts.SYNC2 + " TEXT, " +
                 RawContacts.SYNC3 + " TEXT, " +
-                RawContacts.SYNC4 + " TEXT " +
+                RawContacts.SYNC4 + " TEXT, " +
+                RawContactsColumns.LOCAL_PHOTO_SETTED + " INTEGER NOT NULL DEFAULT 0 " +
         ");");
 
         db.execSQL("CREATE INDEX raw_contacts_contact_id_index ON " + Tables.RAW_CONTACTS + " (" +
@@ -1996,6 +2001,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 + RawContacts.SORT_KEY_ALTERNATIVE + ", "
                 + RawContactsColumns.PHONEBOOK_LABEL_ALTERNATIVE  + ", "
                 + RawContactsColumns.PHONEBOOK_BUCKET_ALTERNATIVE  + ", "
+                + RawContactsColumns.LOCAL_PHOTO_SETTED + ", "
                 + dbForProfile() + " AS " + RawContacts.RAW_CONTACT_IS_USER_PROFILE + ", "
                 + rawContactOptionColumns + ", "
                 + syncColumns
