@@ -869,6 +869,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add(RawContacts.RAW_CONTACT_IS_USER_PROFILE)
             .addAll(sRawContactColumns)
             .addAll(sRawContactSyncColumns)
+            .add(RawContactsColumns.LOCAL_PHOTO_SETTED)
             .build();
 
     /** Contains the columns from the raw entity view*/
