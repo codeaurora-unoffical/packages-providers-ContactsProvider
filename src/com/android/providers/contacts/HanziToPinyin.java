@@ -20,7 +20,10 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import libcore.icu.Transliterator;
 
@@ -36,6 +39,21 @@ public class HanziToPinyin {
     private static HanziToPinyin sInstance;
     private Transliterator mPinyinTransliterator;
     private Transliterator mAsciiTransliterator;
+
+    /**
+     * Special CN character save to Map
+     */
+    private static Map<String, Character> specialCNCharacter =
+            Collections.synchronizedMap(new HashMap<String, Character>());
+
+    /**
+     * key: SimpleChinese character's HexString
+     * value: special character's Unicode
+     */
+    static {
+        // "呵", translate pinyin to "he" instead of "a".
+        specialCNCharacter.put("5475", '\u559d');
+    }
 
     public static class Token {
         /**
@@ -125,7 +143,25 @@ public class HanziToPinyin {
         if (!hasChineseTransliterator() || TextUtils.isEmpty(input)) {
             return null;
         }
-        return mPinyinTransliterator.transliterate(input);
+        // Handle CN character transliterate
+        specialTransliterate(input);
+        return mPinyinTransliterator.transliterate(specialTransliterate(input));
+    }
+
+    /**
+     * @param input the string which you input form keyboard
+     * @return the string which judge whether has special CN character
+     */
+    private final String specialTransliterate(final String input) {
+        char[] chars = input.toCharArray();
+        // Handle special CN character transliterate
+        for (int i =0; i < chars.length; i++) {
+            // judge whether has special CN character
+            if (specialCNCharacter.get(Integer.toHexString(chars[i])) != null) {
+                chars[i] = specialCNCharacter.get(Integer.toHexString(chars[i]));
+            }
+        }
+        return String.valueOf(chars);
     }
 
     /**
