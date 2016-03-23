@@ -83,14 +83,18 @@ public class DataRowHandlerForStructuredPostal extends DataRowHandler {
 
         final boolean touchedUnstruct = !TextUtils.isEmpty(unstruct);
         final boolean touchedStruct = !areAllEmpty(update, STRUCTURED_FIELDS);
+        final boolean specifiedAny = areAnySpecified(update, STRUCTURED_FIELDS);
 
         final PostalSplitter.Postal postal = new PostalSplitter.Postal();
-
-        if (touchedUnstruct && !touchedStruct) {
+        if (touchedUnstruct && !touchedStruct && !specifiedAny) {
             mSplitter.split(postal, unstruct);
             postal.toValues(update);
-        } else if (!touchedUnstruct
-                && (touchedStruct || areAnySpecified(update, STRUCTURED_FIELDS))) {
+            return;
+        }
+
+        // Handle for ExchangeAccount or SamsungAccount that
+        // StructuredPostal.FORMATTED_ADDRESS should been updated when address info changed.
+        if (touchedStruct || specifiedAny) {
             postal.fromValues(augmented);
             final String joined = mSplitter.join(postal);
             update.put(StructuredPostal.FORMATTED_ADDRESS, joined);
