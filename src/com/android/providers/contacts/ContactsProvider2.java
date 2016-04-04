@@ -105,11 +105,11 @@ import android.provider.ContactsContract.StatusUpdates;
 import android.provider.ContactsContract.StreamItemPhotos;
 import android.provider.ContactsContract.StreamItems;
 import android.provider.MediaStore;
-import android.provider.MediaStore.Audio.Media;
 import android.provider.OpenableColumns;
 import android.provider.Settings.Global;
 import android.provider.SyncStateContract;
 import android.telephony.PhoneNumberUtils;
+import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -240,6 +240,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private static final int BACKGROUND_TASK_CHANGE_LOCALE = 9;
     private static final int BACKGROUND_TASK_CLEANUP_PHOTOS = 10;
     private static final int BACKGROUND_TASK_CLEAN_DELETE_LOG = 11;
+    private static final int BACKGROUND_TASK_CHECK_SETTINGS_ACCOUNT = 12;
 
     protected static final int STATUS_NORMAL = 0;
     protected static final int STATUS_UPGRADING = 1;
@@ -1566,7 +1567,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
         scheduleBackgroundTask(BACKGROUND_TASK_OPEN_WRITE_ACCESS);
         scheduleBackgroundTask(BACKGROUND_TASK_CLEANUP_PHOTOS);
         scheduleBackgroundTask(BACKGROUND_TASK_CLEAN_DELETE_LOG);
-
+        scheduleBackgroundTask(BACKGROUND_TASK_CHECK_SETTINGS_ACCOUNT);
         return true;
     }
 
@@ -1803,6 +1804,21 @@ public class ContactsProvider2 extends AbstractContactsProvider
             case BACKGROUND_TASK_CLEAN_DELETE_LOG: {
                 final SQLiteDatabase db = mDbHelper.get().getWritableDatabase();
                 DeletedContactsTableUtil.deleteOldLogs(db);
+                break;
+            }
+
+            case BACKGROUND_TASK_CHECK_SETTINGS_ACCOUNT: {
+                // check local phone account
+                createAccountIfNotExist(AccountWithDataSet.PHONE_NAME,
+                        AccountWithDataSet.ACCOUNT_TYPE_PHONE);
+                // check sim account
+                SubscriptionManager subManager = SubscriptionManager.from(getContext());
+                int[] subList = subManager.getActiveSubscriptionIdList();
+                for (int subId : subList) {
+                    int slotId = SubscriptionManager.getSlotId(subId);
+                    createAccountIfNotExist(getSimAccountName(slotId),
+                            AccountWithDataSet.ACCOUNT_TYPE_SIM);
+                }
                 break;
             }
         }
@@ -3212,6 +3228,41 @@ public class ContactsProvider2 extends AbstractContactsProvider
         }
 
         return id;
+    }
+
+    private String getSimAccountName(int slotId) {
+        if (TelephonyManager.getDefault().isMultiSimEnabled()) {
+            return "SIM" + (slotId + 1);
+        } else {
+            return "SIM";
+        }
+    }
+
+    private void createAccountIfNotExist(String accountName, String accountType) {
+        Cursor c = null;
+        try {
+            Uri.Builder settingsUri = Settings.CONTENT_URI.buildUpon();
+            if (accountName != null) {
+                settingsUri.appendQueryParameter(Settings.ACCOUNT_NAME, accountName);
+            }
+            if (accountType != null) {
+                settingsUri.appendQueryParameter(Settings.ACCOUNT_TYPE, accountType);
+            }
+            c = queryLocal(settingsUri.build(), null, null, null, null, 0, null);
+            if (c != null && c.getCount() == 0) {
+                final ContentValues values = new ContentValues();
+                values.put(Settings.ACCOUNT_NAME, accountName);
+                values.put(Settings.ACCOUNT_TYPE, accountType);
+                values.put(Settings.SHOULD_SYNC, 1);
+                values.put(Settings.UNGROUPED_VISIBLE, 1);
+                final SQLiteDatabase db = mDbHelper.get().getWritableDatabase();
+                db.insert(Tables.SETTINGS, null, values);
+            }
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+        }
     }
 
     /**
