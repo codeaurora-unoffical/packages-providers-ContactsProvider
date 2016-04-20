@@ -594,10 +594,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private static final String TIME_SINCE_LAST_USED_SEC =
             "(strftime('%s', 'now') - " + DataUsageStatColumns.LAST_TIME_USED + "/1000)";
 
-    /* Begin add for RCS */
-    private static final String LOCAL_PHOTO_SETTED = "local_photo_setted";
-    /* End add for RCS */
-
     private static final String SORT_BY_DATA_USAGE =
             "(CASE WHEN " + TIME_SINCE_LAST_USED_SEC + " < " + LAST_TIME_USED_3_DAYS_SEC +
             " THEN 0 " +
@@ -873,7 +869,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add(RawContacts.RAW_CONTACT_IS_USER_PROFILE)
             .addAll(sRawContactColumns)
             .addAll(sRawContactSyncColumns)
-            .add(LOCAL_PHOTO_SETTED)
+            .add(RawContactsColumns.LOCAL_PHOTO_SETTED)
             .build();
 
     /** Contains the columns from the raw entity view*/
