@@ -844,7 +844,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .build();
 
     /** Contains just the raw contacts columns */
-    private static final ProjectionMap sRawContactsProjectionMap = ProjectionMap.builder()
+    private static final ProjectionMap sRawContactsProjectionMapDefault = ProjectionMap.builder()
             .add(RawContacts._ID)
             .add(RawContacts.CONTACT_ID)
             .add(RawContacts.DELETED)
@@ -869,8 +869,12 @@ public class ContactsProvider2 extends AbstractContactsProvider
             .add(RawContacts.RAW_CONTACT_IS_USER_PROFILE)
             .addAll(sRawContactColumns)
             .addAll(sRawContactSyncColumns)
-            .add(RawContactsColumns.LOCAL_PHOTO_SETTED)
             .build();
+
+    private static final ProjectionMap sRawContactsProjectionMap =
+            RcsContactsProviderUtils.isRcsEnabled() ? RcsContactsProviderUtils
+                    .sRawContactsProjectionMapForRcs
+                    : sRawContactsProjectionMapDefault;
 
     /** Contains the columns from the raw entity view*/
     private static final ProjectionMap sRawEntityProjectionMap = ProjectionMap.builder()
