@@ -1080,7 +1080,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onOpen(SQLiteDatabase db) {
         refreshDatabaseCaches(db);
-
+        RcsContactsProviderUtils.updateRawContactsTable(db);
         mSyncState.onDatabaseOpened(db);
 
         db.execSQL("ATTACH DATABASE ':memory:' AS " + DATABASE_PRESENCE + ";");
@@ -1210,50 +1210,54 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         DeletedContactsTableUtil.create(db);
 
         // Raw_contacts table
-        db.execSQL("CREATE TABLE " + Tables.RAW_CONTACTS + " (" +
-                RawContacts._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-                RawContactsColumns.ACCOUNT_ID + " INTEGER REFERENCES " +
+        if (RcsContactsProviderUtils.isRcsEnabled()) {
+            RcsContactsProviderUtils.createRcsRawContacts(db);
+        } else {
+            db.execSQL("CREATE TABLE " + Tables.RAW_CONTACTS + " (" +
+                    RawContacts._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    RawContactsColumns.ACCOUNT_ID + " INTEGER REFERENCES " +
                     Tables.ACCOUNTS + "(" + AccountsColumns._ID + ")," +
-                RawContacts.SOURCE_ID + " TEXT," +
-                RawContacts.BACKUP_ID + " TEXT," +
-                RawContacts.RAW_CONTACT_IS_READ_ONLY + " INTEGER NOT NULL DEFAULT 0," +
-                RawContacts.VERSION + " INTEGER NOT NULL DEFAULT 1," +
-                RawContacts.DIRTY + " INTEGER NOT NULL DEFAULT 0," +
-                RawContacts.DELETED + " INTEGER NOT NULL DEFAULT 0," +
-                RawContacts.CONTACT_ID + " INTEGER REFERENCES contacts(_id)," +
-                RawContacts.AGGREGATION_MODE + " INTEGER NOT NULL DEFAULT " +
-                        RawContacts.AGGREGATION_MODE_DEFAULT + "," +
-                RawContactsColumns.AGGREGATION_NEEDED + " INTEGER NOT NULL DEFAULT 1," +
-                RawContacts.CUSTOM_RINGTONE + " TEXT," +
-                RawContacts.SEND_TO_VOICEMAIL + " INTEGER NOT NULL DEFAULT 0," +
-                RawContacts.TIMES_CONTACTED + " INTEGER NOT NULL DEFAULT 0," +
-                RawContacts.LAST_TIME_CONTACTED + " INTEGER," +
-                RawContacts.STARRED + " INTEGER NOT NULL DEFAULT 0," +
-                RawContacts.PINNED + " INTEGER NOT NULL DEFAULT "  + PinnedPositions.UNPINNED +
+                    RawContacts.SOURCE_ID + " TEXT," +
+                    RawContacts.BACKUP_ID + " TEXT," +
+                    RawContacts.RAW_CONTACT_IS_READ_ONLY + " INTEGER NOT NULL DEFAULT 0," +
+                    RawContacts.VERSION + " INTEGER NOT NULL DEFAULT 1," +
+                    RawContacts.DIRTY + " INTEGER NOT NULL DEFAULT 0," +
+                    RawContacts.DELETED + " INTEGER NOT NULL DEFAULT 0," +
+                    RawContacts.CONTACT_ID + " INTEGER REFERENCES contacts(_id)," +
+                    RawContacts.AGGREGATION_MODE + " INTEGER NOT NULL DEFAULT " +
+                    RawContacts.AGGREGATION_MODE_DEFAULT + "," +
+                    RawContactsColumns.AGGREGATION_NEEDED + " INTEGER NOT NULL DEFAULT 1," +
+                    RawContacts.CUSTOM_RINGTONE + " TEXT," +
+                    RawContacts.SEND_TO_VOICEMAIL + " INTEGER NOT NULL DEFAULT 0," +
+                    RawContacts.TIMES_CONTACTED + " INTEGER NOT NULL DEFAULT 0," +
+                    RawContacts.LAST_TIME_CONTACTED + " INTEGER," +
+                    RawContacts.STARRED + " INTEGER NOT NULL DEFAULT 0," +
+                    RawContacts.PINNED + " INTEGER NOT NULL DEFAULT " + PinnedPositions.UNPINNED +
                     "," + RawContacts.DISPLAY_NAME_PRIMARY + " TEXT," +
-                RawContacts.DISPLAY_NAME_ALTERNATIVE + " TEXT," +
-                RawContacts.DISPLAY_NAME_SOURCE + " INTEGER NOT NULL DEFAULT " +
-                        DisplayNameSources.UNDEFINED + "," +
-                RawContacts.PHONETIC_NAME + " TEXT," +
-                // TODO: PHONETIC_NAME_STYLE should be INTEGER. There is a
-                // mismatch between how the column is created here (TEXT) and
-                // how it is created in upgradeToVersion205 (INTEGER).
-                RawContacts.PHONETIC_NAME_STYLE + " TEXT," +
-                RawContacts.SORT_KEY_PRIMARY + " TEXT COLLATE " +
-                        ContactsProvider2.PHONEBOOK_COLLATOR_NAME + "," +
-                RawContactsColumns.PHONEBOOK_LABEL_PRIMARY + " TEXT," +
-                RawContactsColumns.PHONEBOOK_BUCKET_PRIMARY + " INTEGER," +
-                RawContacts.SORT_KEY_ALTERNATIVE + " TEXT COLLATE " +
-                        ContactsProvider2.PHONEBOOK_COLLATOR_NAME + "," +
-                RawContactsColumns.PHONEBOOK_LABEL_ALTERNATIVE + " TEXT," +
-                RawContactsColumns.PHONEBOOK_BUCKET_ALTERNATIVE + " INTEGER," +
-                RawContactsColumns.NAME_VERIFIED_OBSOLETE + " INTEGER NOT NULL DEFAULT 0," +
-                RawContacts.SYNC1 + " TEXT, " +
-                RawContacts.SYNC2 + " TEXT, " +
-                RawContacts.SYNC3 + " TEXT, " +
-                RawContacts.SYNC4 + " TEXT, " +
-                RawContactsColumns.LOCAL_PHOTO_SETTED + " INTEGER NOT NULL DEFAULT 0 " +
-        ");");
+                    RawContacts.DISPLAY_NAME_ALTERNATIVE + " TEXT," +
+                    RawContacts.DISPLAY_NAME_SOURCE + " INTEGER NOT NULL DEFAULT " +
+                    DisplayNameSources.UNDEFINED + "," +
+                    RawContacts.PHONETIC_NAME + " TEXT," +
+                    // TODO: PHONETIC_NAME_STYLE should be INTEGER. There is a
+                    // mismatch between how the column is created here (TEXT) and
+                    // how it is created in upgradeToVersion205 (INTEGER).
+                    RawContacts.PHONETIC_NAME_STYLE + " TEXT," +
+                    RawContacts.SORT_KEY_PRIMARY + " TEXT COLLATE " +
+                    ContactsProvider2.PHONEBOOK_COLLATOR_NAME + "," +
+                    RawContactsColumns.PHONEBOOK_LABEL_PRIMARY + " TEXT," +
+                    RawContactsColumns.PHONEBOOK_BUCKET_PRIMARY + " INTEGER," +
+                    RawContacts.SORT_KEY_ALTERNATIVE + " TEXT COLLATE " +
+                    ContactsProvider2.PHONEBOOK_COLLATOR_NAME + "," +
+                    RawContactsColumns.PHONEBOOK_LABEL_ALTERNATIVE + " TEXT," +
+                    RawContactsColumns.PHONEBOOK_BUCKET_ALTERNATIVE + " INTEGER," +
+                    RawContactsColumns.NAME_VERIFIED_OBSOLETE + " INTEGER NOT NULL DEFAULT 0," +
+                    RawContacts.SYNC1 + " TEXT, " +
+                    RawContacts.SYNC2 + " TEXT, " +
+                    RawContacts.SYNC3 + " TEXT, " +
+                    RawContacts.SYNC4 + " TEXT " +
+
+                    ");");
+        }
 
         db.execSQL("CREATE INDEX raw_contacts_contact_id_index ON " + Tables.RAW_CONTACTS + " (" +
                 RawContacts.CONTACT_ID +
@@ -1984,7 +1988,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 + RawContacts.STARRED + ","
                 + RawContacts.PINNED;
 
-        String rawContactsSelect = "SELECT "
+        String rawContactsSelectDefault = "SELECT "
                 + RawContactsColumns.CONCRETE_ID + " AS " + RawContacts._ID + ","
                 + RawContacts.CONTACT_ID + ", "
                 + RawContacts.AGGREGATION_MODE + ", "
@@ -2001,7 +2005,6 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 + RawContacts.SORT_KEY_ALTERNATIVE + ", "
                 + RawContactsColumns.PHONEBOOK_LABEL_ALTERNATIVE  + ", "
                 + RawContactsColumns.PHONEBOOK_BUCKET_ALTERNATIVE  + ", "
-                + RawContactsColumns.LOCAL_PHOTO_SETTED + ", "
                 + dbForProfile() + " AS " + RawContacts.RAW_CONTACT_IS_USER_PROFILE + ", "
                 + rawContactOptionColumns + ", "
                 + syncColumns
@@ -2009,7 +2012,10 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 + " JOIN " + Tables.ACCOUNTS + " ON ("
                 +   RawContactsColumns.CONCRETE_ACCOUNT_ID + "=" + AccountsColumns.CONCRETE_ID
                     + ")";
-
+        String rawContactsSelect =
+                RcsContactsProviderUtils.isRcsEnabled() ? RcsContactsProviderUtils
+                        .rawContactsSelectForRcs
+                        : rawContactsSelectDefault;
         db.execSQL("CREATE VIEW " + Views.RAW_CONTACTS + " AS " + rawContactsSelect);
 
         String contactsColumns =
