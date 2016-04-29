@@ -117,6 +117,7 @@ import com.android.common.content.ProjectionMap;
 import com.android.common.content.SyncStateContentProviderHelper;
 import com.android.common.io.MoreCloseables;
 import com.android.internal.util.ArrayUtils;
+import com.android.providers.contacts.AccountWithDataSet;
 import com.android.providers.contacts.ContactLookupKey.LookupKeySegment;
 import com.android.providers.contacts.ContactsDatabaseHelper.AccountsColumns;
 import com.android.providers.contacts.ContactsDatabaseHelper.AggregatedPresenceColumns;
@@ -241,6 +242,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private static final int BACKGROUND_TASK_CLEANUP_PHOTOS = 10;
     private static final int BACKGROUND_TASK_CLEAN_DELETE_LOG = 11;
     private static final int BACKGROUND_TASK_CHECK_SETTINGS_ACCOUNT = 12;
+    private static final int BACKGROUND_TASK_PRELOAD_CONTACT = 13;
+
 
     protected static final int STATUS_NORMAL = 0;
     protected static final int STATUS_UPGRADING = 1;
@@ -1479,6 +1482,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
     private long mLastPhotoCleanup = 0;
     private boolean isPhoneNumberFuzzySearchEnabled;
+    private boolean isPreloadRjilContactInfoEnabled;
 
     private FastScrollingIndexCache mFastScrollingIndexCache;
 
@@ -1554,6 +1558,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
         mProfileHelper = mProfileProvider.getDatabaseHelper(getContext());
         isPhoneNumberFuzzySearchEnabled = getContext().getResources().getBoolean(
                 R.bool.phone_number_fuzzy_search);
+        isPreloadRjilContactInfoEnabled = getContext().getResources().getBoolean(
+                R.bool.preload_rjil_contact_info);
 
         // Initialize the pre-authorized URI duration.
         mPreAuthorizedUriDuration = DEFAULT_PREAUTHORIZED_URI_EXPIRATION;
@@ -1568,6 +1574,9 @@ public class ContactsProvider2 extends AbstractContactsProvider
         scheduleBackgroundTask(BACKGROUND_TASK_CLEANUP_PHOTOS);
         scheduleBackgroundTask(BACKGROUND_TASK_CLEAN_DELETE_LOG);
         scheduleBackgroundTask(BACKGROUND_TASK_CHECK_SETTINGS_ACCOUNT);
+        if (isPreloadRjilContactInfoEnabled) {
+            scheduleBackgroundTask(BACKGROUND_TASK_PRELOAD_CONTACT);
+        }
         return true;
     }
 
@@ -1696,6 +1705,90 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 new DataRowHandlerForIdentity(context, dbHelper, contactAggregator));
     }
 
+    private void importPreloadContact() {
+        final int PRLOAD_CONTACT_COUNT =
+                getContext().getResources().getInteger(R.integer.preload_contact_count);
+        final String PRLOAD_CONTACT_DETAIL_INFO [] =
+                getContext().getResources().getStringArray(R.array.preload_contact_detail_info);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(int i = 0;i < PRLOAD_CONTACT_COUNT; i++)
+                {
+                    Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri
+                            .encode(PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i+1]));
+                    Cursor contactCursor = getContext().getContentResolver().query(uri,
+                            new String[] {PhoneLookup.DISPLAY_NAME}, null, null, null);
+                    try {
+                        if (contactCursor != null && contactCursor.getCount() > 0) {
+                            return;
+                        } else {
+                            final ArrayList<ContentProviderOperation> operationList = new
+                                    ArrayList<ContentProviderOperation>();
+                            ContentProviderOperation.Builder builder = ContentProviderOperation
+                                   .newInsert(RawContacts.CONTENT_URI);
+                            ContentValues contactvalues = new ContentValues();
+                            contactvalues.put(RawContacts.ACCOUNT_NAME,
+                                    AccountWithDataSet.PHONE_NAME);
+                            contactvalues.put(RawContacts.ACCOUNT_TYPE,
+                                    AccountWithDataSet.ACCOUNT_TYPE_PHONE);
+                            builder.withValues(contactvalues);
+                            builder.withValue(RawContacts.AGGREGATION_MODE,
+                                    RawContacts.AGGREGATION_MODE_DISABLED);
+                            operationList.add(builder.build());
+                            Log.i(TAG, "CP2 insert rjil contact info");
+
+                            if ( PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i + 1] != null ) {
+                                builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
+                                builder.withValueBackReference(Phone.RAW_CONTACT_ID, 0);
+                                builder.withValue(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
+                                builder.withValue(Phone.TYPE, Phone.TYPE_MOBILE);
+                                builder.withValue(Phone.NUMBER,
+                                        PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i + 1]);
+                                builder.withValue(Data.IS_PRIMARY, 1);
+                                operationList.add(builder.build());
+                            }
+
+                            if ( PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i] != null ) {
+                                builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
+                                builder.withValueBackReference(StructuredName.RAW_CONTACT_ID, 0);
+                                builder.withValue(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE);
+                                builder.withValue(StructuredName.DISPLAY_NAME,
+                                        PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i]);
+                                operationList.add(builder.build());
+                            }
+
+                            if ( PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i + 2] != null ) {
+                                builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
+                                builder.withValueBackReference(Email.RAW_CONTACT_ID, 0);
+                                builder.withValue(Data.MIMETYPE, Email.CONTENT_ITEM_TYPE);
+                                builder.withValue(Email.TYPE, Email.TYPE_MOBILE);
+                                builder.withValue(Email.ADDRESS,
+                                        PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i + 2]);
+                                operationList.add(builder.build());
+                            }
+
+                            try {
+                                getContext().getContentResolver().applyBatch(
+                                        ContactsContract.AUTHORITY, operationList);
+                            } catch (RemoteException e) {
+                                Log.e(TAG, String.format("%s: %s", e.toString(), e.getMessage()));
+                            } catch (OperationApplicationException e) {
+                                Log.e(TAG, String.format("%s: %s", e.toString(), e.getMessage()));
+                            }
+                        }
+                    } finally {
+
+                        if (contactCursor != null) {
+                            contactCursor.close();
+                        }
+                    }
+                 }//for
+            }
+        }).start();
+    }
+
+
     @VisibleForTesting
     PhotoPriorityResolver createPhotoPriorityResolver(Context context) {
         return new PhotoPriorityResolver(context);
@@ -1820,6 +1913,11 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             AccountWithDataSet.ACCOUNT_TYPE_SIM);
                 }
                 break;
+            }
+
+            case BACKGROUND_TASK_PRELOAD_CONTACT: {
+                    importPreloadContact();
+                    break;
             }
         }
     }
