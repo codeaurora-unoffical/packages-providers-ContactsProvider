@@ -32,5 +32,6 @@
 
     <!-- If true, it supports fuzzy search for contacts number -->
     <bool name="phone_number_fuzzy_search">false</bool>
-
+    <bool name="preload_rjil_contact_info">false</bool>
+    <integer name="preload_contact_count">1</integer>
 </resources>
