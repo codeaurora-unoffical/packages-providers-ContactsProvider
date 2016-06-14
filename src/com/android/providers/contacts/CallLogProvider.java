@@ -306,8 +306,9 @@ public class CallLogProvider extends ContentProvider {
         waitForAccess(mReadAccessLatch);
         checkForSupportedColumns(sCallsProjectionMap, values);
         if (values.containsKey(Calls.PHONE_ACCOUNT_ID)) {
-            int subscription = values.getAsInteger(Calls.PHONE_ACCOUNT_ID);
-            if (subscription > SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            Integer subscription = values.getAsInteger(Calls.PHONE_ACCOUNT_ID);
+            if (subscription != null &&
+                    subscription > SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
                 String operator = getNetworkSpnName(subscription);
                 values.put(ContactsDatabaseHelper.CALLS_OPERATOR, operator);
             }
