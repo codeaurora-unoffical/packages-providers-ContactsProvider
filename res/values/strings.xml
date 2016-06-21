@@ -72,4 +72,18 @@
     <string name="group_title_co_workers">"Coworkers"</string>
     <string name="group_title_family">"Family"</string>
     <string name="group_title_friends">"Friends"</string>
+
+    <!--   <item>name1</item>
+           <item>number1</item>
+           <item>email1</item>
+           <item>name2</item>
+           <item>number2</item>
+           <item>email2</item> -->
+
+    <string-array  name="preload_contact_detail_info">
+        <item>Lyf Care</item>
+        <item>18008909999</item>
+        <item>care@jiolyf.com</item>
+    </string-array>
+
 </resources>
