@@ -1712,13 +1712,14 @@ public class ContactsProvider2 extends AbstractContactsProvider
                 getContext().getResources().getInteger(R.integer.preload_contact_count);
         final String PRLOAD_CONTACT_DETAIL_INFO [] =
                 getContext().getResources().getStringArray(R.array.preload_contact_detail_info);
+        final int SUB_ITEMS_COUNT= PRLOAD_CONTACT_DETAIL_INFO.length/PRLOAD_CONTACT_COUNT;
         new Thread(new Runnable() {
             @Override
             public void run() {
                 for(int i = 0;i < PRLOAD_CONTACT_COUNT; i++)
                 {
                     Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri
-                            .encode(PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i+1]));
+                            .encode(PRLOAD_CONTACT_DETAIL_INFO[SUB_ITEMS_COUNT*i+1]));
                     Cursor contactCursor = getContext().getContentResolver().query(uri,
                             new String[] {PhoneLookup.DISPLAY_NAME}, null, null, null);
                     try {
@@ -1740,33 +1741,33 @@ public class ContactsProvider2 extends AbstractContactsProvider
                             operationList.add(builder.build());
                             Log.i(TAG, "CP2 insert rjil contact info");
 
-                            if ( PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i + 1] != null ) {
+                            if ( PRLOAD_CONTACT_DETAIL_INFO[SUB_ITEMS_COUNT*i + 1] != null ) {
                                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
                                 builder.withValueBackReference(Phone.RAW_CONTACT_ID, 0);
                                 builder.withValue(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
                                 builder.withValue(Phone.TYPE, Phone.TYPE_MOBILE);
                                 builder.withValue(Phone.NUMBER,
-                                        PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i + 1]);
+                                        PRLOAD_CONTACT_DETAIL_INFO[SUB_ITEMS_COUNT*i + 1]);
                                 builder.withValue(Data.IS_PRIMARY, 1);
                                 operationList.add(builder.build());
                             }
 
-                            if ( PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i] != null ) {
+                            if ( PRLOAD_CONTACT_DETAIL_INFO[SUB_ITEMS_COUNT*i] != null ) {
                                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
                                 builder.withValueBackReference(StructuredName.RAW_CONTACT_ID, 0);
                                 builder.withValue(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE);
                                 builder.withValue(StructuredName.DISPLAY_NAME,
-                                        PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i]);
+                                        PRLOAD_CONTACT_DETAIL_INFO[SUB_ITEMS_COUNT*i]);
                                 operationList.add(builder.build());
                             }
 
-                            if ( PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i + 2] != null ) {
+                            if ( PRLOAD_CONTACT_DETAIL_INFO[SUB_ITEMS_COUNT*i + 2] != null ) {
                                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
                                 builder.withValueBackReference(Email.RAW_CONTACT_ID, 0);
                                 builder.withValue(Data.MIMETYPE, Email.CONTENT_ITEM_TYPE);
                                 builder.withValue(Email.TYPE, Email.TYPE_MOBILE);
                                 builder.withValue(Email.ADDRESS,
-                                        PRLOAD_CONTACT_DETAIL_INFO[PRLOAD_CONTACT_COUNT*i + 2]);
+                                        PRLOAD_CONTACT_DETAIL_INFO[SUB_ITEMS_COUNT*i + 2]);
                                 operationList.add(builder.build());
                             }
 
