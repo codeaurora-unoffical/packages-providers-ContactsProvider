@@ -37,7 +37,7 @@ import com.android.providers.contacts.util.PropertyUtils;
 public class CallLogDatabaseHelper {
     private static final String TAG = "CallLogDatabaseHelper";
 
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 3;
 
     private static final boolean DEBUG = false; // DON'T SUBMIT WITH TRUE
 
@@ -183,10 +183,6 @@ public class CallLogDatabaseHelper {
             if (oldVersion < 3) {
                 upgradeToVersion3(db);
             }
-
-            if (oldVersion < 4) {
-                upgradeToVersion4(db);
-            }
         }
     }
 
@@ -234,11 +230,7 @@ public class CallLogDatabaseHelper {
     private void upgradeToVersion3(SQLiteDatabase db) {
         db.execSQL("ALTER TABLE " + Tables.VOICEMAIL_STATUS + " ADD " + Status.SOURCE_TYPE +
                 " TEXT;");
-    }
-
-    private void upgradeToVersion4(SQLiteDatabase db) {
-        db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + CALLS_OPERATOR
-                + " TEXT;");
+        db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + CALLS_OPERATOR + " TEXT;");
     }
 
     /**
