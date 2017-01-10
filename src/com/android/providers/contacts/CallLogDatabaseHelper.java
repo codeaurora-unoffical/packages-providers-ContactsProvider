@@ -183,10 +183,6 @@ public class CallLogDatabaseHelper {
             if (oldVersion < 3) {
                 upgradeToVersion3(db);
             }
-
-            if (oldVersion < 3) {
-                upgradeToVersion3(db);
-            }
         }
     }
 
@@ -233,7 +229,8 @@ public class CallLogDatabaseHelper {
      */
     private void upgradeToVersion3(SQLiteDatabase db) {
         db.execSQL("ALTER TABLE " + Tables.VOICEMAIL_STATUS + " ADD " + Status.SOURCE_TYPE +
-                " TEXT");
+                " TEXT;");
+        db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + CALLS_OPERATOR + " TEXT;");
     }
 
     /**
