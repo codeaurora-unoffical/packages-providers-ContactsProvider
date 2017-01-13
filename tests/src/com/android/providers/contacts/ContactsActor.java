@@ -235,6 +235,11 @@ public class ContactsActor {
         public boolean isSameProfileGroup(int userId, int otherUserId) {
             return getUserInfo(userId).profileGroupId == getUserInfo(otherUserId).profileGroupId;
         }
+
+        @Override
+        public boolean isUserUnlocked(int userId) {
+            return true; // Just make it always unlocked for now.
+        }
     }
 
     /**
@@ -289,6 +294,8 @@ public class ContactsActor {
                 // DevicePolicyManager.
                 return overallContext.getSystemService(name);
             }
+
+
 
             @Override
             public String getSystemServiceName(Class<?> serviceClass) {
@@ -350,6 +357,11 @@ public class ContactsActor {
             @Override
             public void sendBroadcast(Intent intent, String receiverPermission) {
                 // Ignore.
+            }
+
+            @Override
+            public Context getApplicationContext() {
+                return this;
             }
         };
 
