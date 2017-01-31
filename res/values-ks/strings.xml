@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">اینڈرائڈ کور ایپس</string>
+    <string name="app_label">رٲبطہ سٹوریج</string>
+    <string name="provider_label">رٲبطہ</string>
+    <string name="upgrade_msg">اپ گریڈ کران رٲبطہ ڈیٹا بیس۔</string>
+    <string name="upgrade_out_of_memory_notification_ticker">رٲبطہ اپ گریڈ خٲطر چھِ مزید میمری ضورتھ۔</string>
+    <string name="upgrade_out_of_memory_notification_title">اپ گریڈ کران رٲبطہ خٲطر سٹوریج</string>
+    <string name="upgrade_out_of_memory_notification_text">اپ گریڈ مکمل کرنِہ خٲطر دِیو زیر۔</string>
+    <string name="default_directory">رٲبطہ</string>
+    <string name="local_invisible_directory">بدل</string>
+    <string name="read_write_all_voicemail_label">تمام وائس میل رسٲھی کر حٲصل</string>
+    <string name="read_write_all_voicemail_description">اختیار دِیو ایپس یِم ڈِوائس کِہ تمام وائس میل محفوظ تِہ پرنِچ رسٲھی حٲصل کرنس۔</string>
+    <string name="voicemail_from_column">۔&quot;وائس میل یِم پیٹھ&quot;</string>
+    <string name="group_family">عیال</string>
+    <string name="group_friend">دوست</string>
+    <string name="group_work">سیتھ کیم کرن وول</string>
+    <string name="debug_dump_title">نقل کر رٲبطہ ڈیٹا بیس</string>
+    <string name="debug_dump_database_message">توہ چھو قریب یتھ 1﴾ پننِس ڈیٹا بیسِچ نقل ترتیب کرنس یتھ منز موجود آسن تمام رٲبطن 
+متعلق تفصیلات تِہ تمام کال لٹھِ انٹرنل سٹوریجس منز، بیِہ 2﴾ کر یِہ ای میل۔ یاد تھٲوزیو ڈِوائس نیبر کامیٲبی سان نقل کرنِہ یا ای میل حٲصل کرنِہ
+پتِہ یِہ نقل جلد از جلد خٲرج کرُن۔</string>
+    <string name="debug_dump_delete_button">وین کر خٲرج</string>
+    <string name="debug_dump_start_button">شروع</string>
+    <string name="debug_dump_email_sender_picker">فائل سچزنِہ خٲطر چُنیو اکھ پروگرام</string>
+    <string name="debug_dump_email_subject">۔Db رٲبطہ چھِ سیتھ جوڑیتھ</string>
+    <string name="debug_dump_email_body">جوڑیتھ چھِ مین رٲبطہ ڈیٹا بیس مین تمام رٲبطہ تفصیل ھیتھ۔ حفاظت سان کریو تھف</string>
+</resources>

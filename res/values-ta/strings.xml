@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android முக்கியப் பயன்பாடுகள்</string>
+    <string name="app_label">தொடர்புகள் சேமிப்பிடம்</string>
+    <string name="provider_label">தொடர்புகள்</string>
+    <string name="upgrade_msg">தொடர்புகள் தரவுத்தளத்தை மேம்படுத்துகிறது.</string>
+    <string name="upgrade_out_of_memory_notification_ticker">தொடர்புகளின் மேம்படுத்தலுக்கு கூடுதல் நினைவகம் தேவை.</string>
+    <string name="upgrade_out_of_memory_notification_title">தொடர்புகளுக்காகச் சேமிப்பிடத்தை மேம்படுத்துகிறது</string>
+    <string name="upgrade_out_of_memory_notification_text">மேம்படுத்தலை முடிக்க தொடவும்.</string>
+    <string name="default_directory">தொடர்புகள்</string>
+    <string name="local_invisible_directory">பிற</string>
+    <string name="read_write_all_voicemail_label">குரல்அஞ்சல்கள் அனைத்தையும் அணுகவும்</string>
+    <string name="read_write_all_voicemail_description">இந்த சாதனம் அணுகக்கூடிய அனைத்து குரலஞ்சல்களையும் சேமிக்கவும் மீட்டெடுக்கவும் பயன்பாட்டை அனுமதிக்கிறது.</string>
+    <string name="voicemail_from_column">&quot;இவரிடமிருந்து குரல் அஞ்சல்&quot;</string>
+    <string name="group_family">குடும்பம்</string>
+    <string name="group_friend">நண்பர்கள்</string>
+    <string name="group_work">சகபணியாளர்கள்</string>
+    <string name="debug_dump_title">தொடர்புகளின் தரவுத்தளத்தை நகலெடு</string>
+    <string name="debug_dump_database_message">தொடர்புகள் சார்ந்த 1) எல்லாத் தகவல்களையும் எல்லா அழைப்பு விவரங்களையும் அக சேமிப்பகத்தில் உங்களுடைய தரவுதளத்தின் ஒரு நகலை எடுத்து 2) மின்னஞ்சல் செய்யப் போகிறீர்கள். கருவியிலிருந்து வெற்றிகரமாக நகலெடுத்த பின்னர் அல்லது மின்னஞ்சலைப் பெற்றதும் அந்த நகலை நீக்கிவிட மறக்காதீர்கள்.</string>
+    <string name="debug_dump_delete_button">இப்போது நீக்கு</string>
+    <string name="debug_dump_start_button">தொடங்கு</string>
+    <string name="debug_dump_email_sender_picker">உங்கள் கோப்பை அனுப்புவதற்கு ஒரு நிரலைத் தேர்வுசெய்யவும்</string>
+    <string name="debug_dump_email_subject">தொடர்புகளின் Db இணைக்கப்பட்டுள்ளது</string>
+    <string name="debug_dump_email_body">என்னுடைய எல்லா தொடர்பு விவரங்களுடன் உள்ள தொடர்புகள் தரவுத்தளம் இணைக்கப்பட்டுள்ளது. கவனமாகக் கையாளவும்.</string>
+</resources>

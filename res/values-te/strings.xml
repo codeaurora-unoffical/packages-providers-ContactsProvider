@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android ప్రధాన అనువర్తనాలు</string>
+    <string name="app_label">పరిచయాల నిల్వ</string>
+    <string name="provider_label">పరిచయాలు</string>
+    <string name="upgrade_msg">పరిచయాల డేటాబేస్‌ను అప్‌గ్రేడ్ చేస్తోంది.</string>
+    <string name="upgrade_out_of_memory_notification_ticker">పరిచయాల అప్‌గ్రేడ్‌కు మరింత మెమరీ అవసరం.</string>
+    <string name="upgrade_out_of_memory_notification_title">పరిచయాల కోసం నిల్వను అప్‌గ్రేడ్ చేస్తోంది</string>
+    <string name="upgrade_out_of_memory_notification_text">అప్‌గ్రేడ్‌ను పూర్తి చేయడానికి తాకండి.</string>
+    <string name="default_directory">పరిచయాలు</string>
+    <string name="local_invisible_directory">ఇతరం</string>
+    <string name="read_write_all_voicemail_label">అన్ని వాయిస్‌మెయిల్‌లను ప్రాప్యత చేయి</string>
+    <string name="read_write_all_voicemail_description">ఈ పరికరం ప్రాప్తి చేయగల అన్ని వాయిస్‌మెయిల్‌లను నిల్వ చేయడానికి లేదా తిరిగి పొందడానికి అనువర్తనాన్ని అనుమతిస్తుంది.</string>
+    <string name="voicemail_from_column">&quot;వీరినుంచి వాయిస్‌మెయిల్ &quot;</string>
+    <string name="group_family">కుటుంబం</string>
+    <string name="group_friend">స్నేహితులు</string>
+    <string name="group_work">సహోద్యోగులు</string>
+    <string name="debug_dump_title">పరిచయాల డేటాబేస్‌ను కాపీ చేయి</string>
+    <string name="debug_dump_database_message">మీరు ఇలా చేయబోతున్నారు 1) అన్ని పరిచయాల సంబంధిత సమాచారం మరియు అన్ని కాల్ లాగ్స్ తో సహా అంతర్గత నిల్వ లోనికి మీ డేటాబేస్ ను కాపీ చేస్తున్నారు, మరియు 2) దానిని ఇమెయిల్ చేస్తున్నారు. మీరు దానిని పరికరంపై విజయవంతంగా కాపీ చేసిన వెంటనే లేక ఇమెయిల్ అందినవెంటనే తొలగించాలని గుర్తుంచుకోండి.</string>
+    <string name="debug_dump_delete_button">ఇప్పుడు తొలగించండి</string>
+    <string name="debug_dump_start_button">ప్రారంభించు</string>
+    <string name="debug_dump_email_sender_picker">మీ ఫైల్‌ను పంపేందుకు ఒక ప్రోగ్రాం ఎంచుకోండి</string>
+    <string name="debug_dump_email_subject">పరిచయాల Db జోడించబడింది</string>
+    <string name="debug_dump_email_body">నా అన్ని పరిచయాల సమాచారంతో నా పరిచయాల డేటాబేస్ జోడించబడింది. జాగ్రత్తగా నిర్వహించండి.</string>
+</resources>

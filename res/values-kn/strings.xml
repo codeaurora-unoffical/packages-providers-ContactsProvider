@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android Core App‌ಗಳು</string>
+    <string name="app_label">ಸಂಪರ್ಕ ಸಂಗ್ರಹ</string>
+    <string name="provider_label">ದೂರವಾಣಿ ಪುಸ್ತಕ</string>
+    <string name="upgrade_msg">ಸಂಪರ್ಕಗಳ ಡೇಟಾಬೇಸ್‌ ಅಪ್‌ಗ್ರೇಡ್ ಮಾಡುವುದು.</string>
+    <string name="upgrade_out_of_memory_notification_ticker">ಸಂಪರ್ಕಗಳ ಅಪ್‌ಗ್ರೇಡ್‌ಗೆ ಇನ್ನಷ್ಟು ಮೆಮೊರಿ ಅಗತ್ಯವಿದೆ.</string>
+    <string name="upgrade_out_of_memory_notification_title">ಸಂಪರ್ಕಗಳಿಗೆ ಸ್ಟೋರೇಜ್‌ ಅಪ್‌ಗ್ರೇಡ್‌ ಮಾಡಲಾಗುತ್ತಿದೆ</string>
+    <string name="upgrade_out_of_memory_notification_text">ಅಪ್‌ಗ್ರೇಡ್‌ ಪೂರ್ಣಗೊಳಿಸಲು ಟಚ್ ಮಾಡಿ.</string>
+    <string name="default_directory">ದೂರವಾಣಿ ಪುಸ್ತಕ</string>
+    <string name="local_invisible_directory">ಇತರೆ</string>
+    <string name="read_write_all_voicemail_label">ಎಲ್ಲ ಧ್ವನಿ ಮೇಲ್‌ಗಳ ಪ್ರವೇಶ ಪಡೆಯಿರಿ</string>
+    <string name="read_write_all_voicemail_description">ಈ ಸಾಧನವು ಪ್ರವೇಶಿಸಬಹುದಾದ ಎಲ್ಲಾ ಧ್ವನಿಮೇಲ್‌ಗಳನ್ನು ಸಂಗ್ರಹಿಸಲು ಮತ್ತು ಹಿಂಪಡೆಯಲು ಆಪ್ ಅನುಮತಿಸುತ್ತದೆ.</string>
+    <string name="voicemail_from_column">&quot;ಇದರಿಂದ ಧ್ವನಿಮೇಲ್ &quot;</string>
+    <string name="group_family">ಕುಟುಂಬ</string>
+    <string name="group_friend">ಸ್ನೇಹಿತರು</string>
+    <string name="group_work">ಸಹಕೆಲಸಗಾರರು</string>
+    <string name="debug_dump_title">ಸಂಪರ್ಕಗಳ ಡೇಟಾಬೇಸ್‌ ನಕಲು ಮಾಡಿ</string>
+    <string name="debug_dump_database_message">ನೀವು 1)ಎಲ್ಲ ಸಂಪರ್ಕ ಸಂಬಂಧಿ ಮಾಹಿತಿಯನ್ನು ಮತ್ತು ಎಲ್ಲ ಕಾಲ್‌ ಲಾಗ್‌ಗಳನ್ನು ಇಂಟರ್ನಲ್‌ ಸ್ಟೋರೇಜ್‌ಗೆ ನಿಮ್ಮ ಡೇಟಾಬೇಸ್‌ ಅನ್ನು ನಕಲು ಮಾಡಿ ಮತ್ತು 2) ಇಮೇಲ್ ಮಾಡಿ. ಸಾಧನದಿಂದ ನಕಲು ಮಾಡಿದ ನಂತರ ಅಥವಾ ಇಮೇಲ್ ಸ್ವೀಕರಿಸಿದ ನಂತರ ಪ್ರತಿಯನ್ನು ಅಳಿಸಲು ನೆನಪಿರಲಿ.</string>
+    <string name="debug_dump_delete_button">ಇದೀಗ ಅಳಿಸಿ</string>
+    <string name="debug_dump_start_button">ಪ್ರಾರಂಭಿಸಿ </string>
+    <string name="debug_dump_email_sender_picker">ನಿಮ್ಮ ಫೈಲ್ ಕಳುಹಿಸಲು ಪ್ರೋಗ್ರಾಂ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="debug_dump_email_subject">ಸಂಪರ್ಕಗಳ Db ಹೊಂದಿಸಲಾಗಿದೆ</string>
+    <string name="debug_dump_email_body">ನನ್ನ ಎಲ್ಲ ಸಂಪರ್ಕಗಳ ಮಾಹಿತಿಯನ್ನು ಹೊಂದಿರುವ ನನ್ನ ಸಂಪರ್ಕಗಳ ಡೇಟಾಬೇಸ್‌ ಅಟ್ಯಾಚ್ ಮಾಡಲಾಗಿದೆ. ಕಾಳಜಿಯಿಂದ ನಿರ್ವಹಿಸಿ.</string>
+</resources>

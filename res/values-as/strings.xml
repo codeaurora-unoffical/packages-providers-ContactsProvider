@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android ক\'ৰ এপ্পচ</string>
+    <string name="app_label">কনটেক্টসমূহৰ ষ্টোৰেজ</string>
+    <string name="provider_label">কনটেক্টসমূহ</string>
+    <string name="upgrade_msg">কনটেক্ট ডাটাবেছ উন্নীত কৰি থকা হৈছে৷</string>
+    <string name="upgrade_out_of_memory_notification_ticker">কনটেক্টসমূহৰ আপগ্ৰেডৰ বাবে বেছি মেমোৰীৰ প্ৰয়োজন।</string>
+    <string name="upgrade_out_of_memory_notification_title">কনটেক্টসমূহৰ বাবে ষ্টোৰেজ আপগ্ৰেড কৰা হৈছে</string>
+    <string name="upgrade_out_of_memory_notification_text">আপগ্ৰেড সম্পূৰ্ণ কৰিবলৈ স্পৰ্শ কৰক৷</string>
+    <string name="default_directory">কনটেক্টসমূহ</string>
+    <string name="local_invisible_directory">অন্যান্য</string>
+    <string name="read_write_all_voicemail_label">সকলো ভইচমেইলত প্ৰবেশ কৰক</string>
+    <string name="read_write_all_voicemail_description">এই ডিভাইচটোৱে প্ৰবেশ কৰিব পৰা সকলোবোৰ  ভয়চমেইল সংৰক্ষণ আৰু পুনৰুদ্ধাৰ কৰিবলৈ অনুমতি দিয়ে৷</string>
+    <string name="voicemail_from_column">&quot;ৰ পৰা ভইচমেইল &quot;</string>
+    <string name="group_family">পৰিয়াল</string>
+    <string name="group_friend">বন্ধুবৰ্গ</string>
+    <string name="group_work">সহকৰ্মীবৰ্গ</string>
+    <string name="debug_dump_title">কনটেক্ট ডাটাবেছ প্ৰতিলিপি কৰক</string>
+    <string name="debug_dump_database_message">আপুনি 1) সকলো সংযোগ সম্পৰ্কিত তথ্য আৰু সকলো কল লগ অন্তৰ্ভুক্ত থকা আপোনাৰ ডাটাবেচৰ আভ্যন্তৰীণ ষ্টোৰেজলৈ এটা কপি কৰিবলৈ আৰু 2) ইয়াক ইমেইল কৰিবলৈ সাজু হৈছে। আপুনি ডিভাইচ বা লাভ কৰা ইমেইলৰ পৰা সফলতাৰে ক\'পি কৰা উপাংশখিনি মচি পেলাবলৈ মনত ৰাখক৷</string>
+    <string name="debug_dump_delete_button">এতিয়াই মচি দিওঁক</string>
+    <string name="debug_dump_start_button">আৰম্ভ</string>
+    <string name="debug_dump_email_sender_picker">আপোনাৰ ফাইলটো প্ৰেৰণ কৰিবলৈ এটা প্ৰ\'গ্ৰাম বাচনি কৰক</string>
+    <string name="debug_dump_email_subject">কনটেক্টসমূহৰ Db এটাচ্চ কৰা হল</string>
+    <string name="debug_dump_email_body">মোৰ সংযোগসমূহৰ সকলো তথ্যৰ সৈতে মোৰ সংযোগৰ ডাটাবেচ সংযোজন কৰা হৈছে। হেণ্ডেল ৱিথ কেয়াৰ।</string>
+</resources>

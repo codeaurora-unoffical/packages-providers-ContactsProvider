@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android કોર એપ્સ</string>
+    <string name="app_label">સંપર્કો સંગ્રહ</string>
+    <string name="provider_label">સંપર્કો</string>
+    <string name="upgrade_msg">સંપર્ક ડેટા અપગ્રેડ કરવો.</string>
+    <string name="upgrade_out_of_memory_notification_ticker">સંપર્કો અપગ્રેડ માટે વધુ મેમરીની આવશ્યકતા છે</string>
+    <string name="upgrade_out_of_memory_notification_title">સંપર્કો માટે સંગ્રહ અપગ્રેડ કરવો</string>
+    <string name="upgrade_out_of_memory_notification_text">અપગ્રેડ પૂર્ણ કરવા માટે સ્પર્શ કરો.</string>
+    <string name="default_directory">સંપર્કો</string>
+    <string name="local_invisible_directory">અન્ય</string>
+    <string name="read_write_all_voicemail_label">તમામ વોઇસમેઇલ્સ એક્સેસ કરો</string>
+    <string name="read_write_all_voicemail_description">આ ઉપકરણ વપરાશ કરી શકે તે તમામ વોઇઝમેઇલ્સની પુનઃપ્રાપ્તિ અને સંગ્રહ માટે એપને અનુમતિ આપે છે.</string>
+    <string name="voicemail_from_column">&quot;તરફથી વોઇસમેઇલ&quot;</string>
+    <string name="group_family">કુટુંબ</string>
+    <string name="group_friend">મિત્રો</string>
+    <string name="group_work">સહકાર્યકરો</string>
+    <string name="debug_dump_title">સંપર્કો ડેટાબેઝ કોપી કરો</string>
+    <string name="debug_dump_database_message">તમે 1) ડેટાબેઝની પ્રત બનાવવાની તૈયારીમાં છો જેમાં તમામ સંપર્કો સંબંધિત માહિતી સામેલ છે અને આંતરિક સંગ્રહનો તમામ કૉલ લૉગ, અને 2) ઈમેલ કરવાની તૈયારીમાં છો. જેવી તમે ડિવાઇસ ઉપર સફળતાપૂર્વક તેની કોપી કરી લીધી હોય અથવા ઈમેઈલ મળ્યો હોય કે તરત જ કોપીને ડીલીટ કરવાનું યાદ રાખો.</string>
+    <string name="debug_dump_delete_button">હમણાં હટાવો</string>
+    <string name="debug_dump_start_button">પ્રારંભ કરો</string>
+    <string name="debug_dump_email_sender_picker">તમારી ફાઇલ મોકલવા માટે પ્રોગ્રામ પસંદ કરો</string>
+    <string name="debug_dump_email_subject">સંપર્કો Db જોડાયાં</string>
+    <string name="debug_dump_email_body">બીડેલ છે મારા તમામ સંપર્કોની માહિતી સાથેનો મારો સંપર્ક ડેટાબેઝ. કાળજી સાથે દેખરેખ રાખો.</string>
+</resources>

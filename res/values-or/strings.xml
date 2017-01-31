@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android କୋର ଆପ୍ଲିକେସନଗୁଡିକ</string>
+    <string name="app_label">ସମ୍ପର୍କଗୁଡିକ ଷ୍ଟୋରେଜ୍ କରନ୍ତୁ</string>
+    <string name="provider_label">ସମ୍ପର୍କଗୁଡିକ</string>
+    <string name="upgrade_msg">ସମ୍ପର୍କ ଡାଟାବେସ୍ ଅପଗ୍ରେଡ୍ କରୁଛି</string>
+    <string name="upgrade_out_of_memory_notification_ticker">ସମ୍ପର୍କ ଅପଗ୍ରେଡ୍ ଅଧିକ ମେମୋରୀ ଆବଶ୍ୟକ କରେ।</string>
+    <string name="upgrade_out_of_memory_notification_title">ସମ୍ପର୍କଗୁଡିକ ପାଇଁ ଷ୍ଟୋରେଜ୍ ଅପଗ୍ରେଡ୍ କରୁଛି</string>
+    <string name="upgrade_out_of_memory_notification_text">ଅପଗ୍ରେଡ୍ ସମ୍ପୂର୍ଣ୍ଣ କରିବାକୁ ସ୍ପର୍ଶ କରନ୍ତୁ।</string>
+    <string name="default_directory">ସମ୍ପର୍କଗୁଡିକ</string>
+    <string name="local_invisible_directory">ଅନ୍ୟାନ୍ୟ</string>
+    <string name="read_write_all_voicemail_label">ସବୁ ଭଏସ୍‌ମେଲ୍ ଆକ୍ସେସ କରନ୍ତୁ</string>
+    <string name="read_write_all_voicemail_description">ଏହି ଆପ୍ଲିକେସନ୍ ସବୁ ଭଏସ୍ ମେଲ୍କୁ ଷ୍ଟୋର୍ ଏବଂ ପୁନଃରୁଦ୍ଧାର କରିବା ପାଇଁ ଅନୁମତି ଦିଏ ଯାହା ଏହି ଡିଭାଇସ୍ ଆକ୍ସେସ୍ କରିପାରିବ।</string>
+    <string name="voicemail_from_column">&quot;ଭଏସମେଲରୁ &quot;</string>
+    <string name="group_family">ପରିବାର</string>
+    <string name="group_friend">ବନ୍ଧୁଗଣ</string>
+    <string name="group_work">ସହକର୍ମୀ</string>
+    <string name="debug_dump_title">ସମ୍ପର୍କ ଟାବେସ୍ କପି କରନ୍ତୁ</string>
+    <string name="debug_dump_database_message">ଆପଣ 1) ଆପଣଙ୍କର ଡାଟାବେସ୍‍ କପି କରିବା ପାଇଁ ଏକ କପି ପ୍ରସ୍ତୁତ କରିବା ଆବଶ୍ୟକ ଯାହା ସମସ୍ତ ସମ୍ପର୍କ ସମ୍ବଧିତ ସୂ୍ଚନା ଓ ଆୟତରୀଣ ଷ୍ଟୋରେଜ୍‍ର ସମସ୍ତ କଲ୍‍ ସୂଚୀ ଅନ୍ତଭୁକ୍ତ କରିବ, ଓ 2) ଏହା ଇମେଲ୍‍ କର୍ନ୍ତୁ। ଆପଣ ସଫଳତାର ସହ ଏହାକୁ ଡିଭାଇସ୍‌ ବାହାରେ କପି କରିବା ପରେ କିମ୍ବା ଇମେଲ୍ ପ୍ରାପ୍ତ କରିସାରିବା ପରେ କପିକୁ ଯଥା ଶୀଘ୍ର ବିଲୋପ କରିବାକୁ ମନେରଖନ୍ତୁ।</string>
+    <string name="debug_dump_delete_button">ବର୍ତ୍ତମାନ ବିଲୋପ କରନ୍ତୁ</string>
+    <string name="debug_dump_start_button">ଆରମ୍ଭ</string>
+    <string name="debug_dump_email_sender_picker">ଆପଣଙ୍କ ଫାଇଲ ପଠାଇବାକୁ ଏକ ପ୍ରୋଗ୍ରାମ ବାଛନ୍ତୁ</string>
+    <string name="debug_dump_email_subject">ସମ୍ପର୍କଗୁଡିକର Db ସଂଲଗ୍ନ ହୋଇଛି</string>
+    <string name="debug_dump_email_body">ମୋ ସମ୍ପର୍କ ସୂଚନା ସହିତ ମୋ ସମ୍ପର୍କ ସଂଲଗ୍ନ ହୋଇଛି। ସତର୍କତାର ସହ ହ୍ୟାଣ୍ଡେଲ୍‌।</string>
+</resources>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android ਕੋਰ ਐਪਲੀਕੇਸ਼ਨ</string>
+    <string name="app_label">ਸੰਪਰਕ ਸਟੋਰੇਜ</string>
+    <string name="provider_label">ਸੰਪਰਕ</string>
+    <string name="upgrade_msg">ਸੰਪਰਕਾਂ ਦੇ ਡੇਟਾਬੇਸ ਨੂੰ ਅਪਗਰੇਡ ਕਰ ਰਿਹਾ ਹੈ।</string>
+    <string name="upgrade_out_of_memory_notification_ticker">ਸੰਪਰਕ ਅਪਗਰੇਡ ਲਈ ਅਤੇ ਮੇਮੋਰੀ ਦੀ ਲੋੜ ਹੈ</string>
+    <string name="upgrade_out_of_memory_notification_title">ਸੰਪਰਕਾਂ ਲਈ ਸਟੋਰੇਜ ਨੂੰ ਅਪਗਰੇਡ ਕਰ ਰਿਹਾ ਹੈ</string>
+    <string name="upgrade_out_of_memory_notification_text">ਅਪਗਰੇਡ ਨੂੰ ਪੂਰਾ ਕਰਨ ਲਈ ਛੁਓ।</string>
+    <string name="default_directory">ਸੰਪਰਕ</string>
+    <string name="local_invisible_directory">ਹੋਰ</string>
+    <string name="read_write_all_voicemail_label">ਸਾਰੀਆਂ ਵੋਇਸਮੇਲਾਂ ਤੇ ਪਹੁੰਚ ਪ੍ਰਾਪਤ ਕਰੋ</string>
+    <string name="read_write_all_voicemail_description">&quot;ਐਪਲੀਕੇਸ਼ਨ ਨੂੰ ਸਾਰੇ ਵੋਇਸਮੇਲਾਂ ਨੂੰ ਸਟੋਰ ਅਤੇ ਰਿਟਰਿਵ ਕਰਨ ਦੀ ਆਗਿਆ ਦਿੰਦਾ ਹੈ ਜਿਨ੍ਹਾਂ ਦਾ ਇਹ ਡਿਵਾਇਸ ਇਸਤੇਮਾਲ ਕਰ ਸਕਦਾ ਹੈ।&quot;</string>
+    <string name="voicemail_from_column">&quot;ਤੋਂ ਵੌਇਸਮੇਲ&quot;</string>
+    <string name="group_family">ਪਰਿਵਾਰ</string>
+    <string name="group_friend">ਦੋਸਤਾਂ </string>
+    <string name="group_work">ਸਹਿ-ਕਰਮੀਆਂ</string>
+    <string name="debug_dump_title">ਡੇਟਾ ਬੇਸ ਸੰਪਰਕ ਕੌਪੀ ਕਰੋ</string>
+    <string name="debug_dump_database_message">ਤੁਸੀਂ 1) ਇੰਟਰਨਲ ਸਟੋਰੇਜ ਵਿੱਚ ਆਪਣੇ ਡੇਟਾਬੇਸ ਦੀ ਕਾੱਪੀ ਬਣਾਉਣ ਜਾ ਰਹੇ ਹੋ, ਜਿਸ ਵਿੱਚ ਸਾਰੇ ਸੰਪਰਕਾਂ ਬਾਰੇ ਜਾਣਕਾਰੀ ਅਤੇ ਕਾਲ ਲੋਗ ਸ਼ਾਮਲ ਹਨ, ਅਤੇ 2) ਇਸ ਨੂੰ ਈਮੇਲ ਕਰੋਗੇ। ਡਿਵਾਈਸ ਤੋਂ ਸਫਲਤਾਪੂਰਵਕ ਕਾਪੀ ਕਰਨ ਤੋਂ ਬਾਅਦ ਜਾਂ ਈਮੇਲ ਪ੍ਰਾਪਤ ਹੋਣ ਤੋਂ ਬਾਅਦ ਕਾਪੀ ਨੂੰ ਮਿਟਾਉਣਾ ਯਾਦ ਰੱਖੋ।</string>
+    <string name="debug_dump_delete_button">ਹੁਣ ਹਟਾਓ</string>
+    <string name="debug_dump_start_button">ਚਾਲੂ ਕਰੋ</string>
+    <string name="debug_dump_email_sender_picker">ਆਪਣੀ ਫਾਇਲ ਭੇਜਣ ਲਈ ਇੱਕ ਪ੍ਰੋਗਰਾਮ ਚੁਣੋ</string>
+    <string name="debug_dump_email_subject">ਸੰਪਰਕ ਡੀ ਬੀ ਅਟੈਚਡ</string>
+    <string name="debug_dump_email_body">ਮੇਰੀ ਕੰਟੈਕਟਸ ਜਾਣਕਾਰੀ ਨਾਲ ਮੇਰਾ ਕੰਟੈਕਟਸ ਡੇਟਾਬੇਸ ਨੱਥੀ ਹੈ। ਧਿਆਨ ਨਾਲ ਸੰਭਾਲੋ।</string>
+</resources>

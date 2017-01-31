@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android প্রাথমিক অ্যাপ্লিকেশানগুলি</string>
+    <string name="app_label">যোগাযোগসমূহের স্টোরেজ</string>
+    <string name="provider_label">পরিচিতিগুলি</string>
+    <string name="upgrade_msg">পরিচিতির ডেটাবেস আপগ্রেড করছি।</string>
+    <string name="upgrade_out_of_memory_notification_ticker">পরিচিতির আপগ্রেডের আরো স্মৃতির প্রয়োজন।</string>
+    <string name="upgrade_out_of_memory_notification_title">পরিচিতিগুলির জন্য সঞ্চয়স্থান আপগ্রেড করা হচ্ছে</string>
+    <string name="upgrade_out_of_memory_notification_text">আপগ্রেড সম্পূর্ণ করতে স্পর্শ করুন।</string>
+    <string name="default_directory">পরিচিতিগুলি</string>
+    <string name="local_invisible_directory">অন্যান্য</string>
+    <string name="read_write_all_voicemail_label">সব ভয়েসমেইল ব্যবহার করুন</string>
+    <string name="read_write_all_voicemail_description">অ্যাপ্লিকেশনটিকে সঞ্চয় এবং পুনরুদ্ধার করতে অনুমতি দেয় এই ডিভাইসটি অ্যাক্সেস করতে পারে এমন সমস্ত ভয়েসমেল।</string>
+    <string name="voicemail_from_column">&quot;এর থেকে ভয়েসমেইল &quot;</string>
+    <string name="group_family">পরিবার</string>
+    <string name="group_friend">বন্ধুগণ</string>
+    <string name="group_work">সহকর্মীগণ</string>
+    <string name="debug_dump_title">পরিচিতির ডাটাবেস অনুলিপি করুন</string>
+    <string name="debug_dump_database_message">আপনি 1) আপনার কন্টাক্ট সংক্রান্ত তথ্য এবং অভ্যন্তরীণ স্টোরেজে সব কল লগ অন্তর্ভুক্ত রয়েছে এমন ডেটাবেসের একটি অনুলিপি তৈরি করতে, এবং 2) এটি ইমেল করতে চলেছেন। আপনি সফলভাবে ডিভাইসের বাইরে এটা কপি করা বা ইমেল পাওয়ার পর, যত তাড়াতাড়ি সম্ভব কপি মুছে দিতে মনে রাখুন।</string>
+    <string name="debug_dump_delete_button">এখন মুছুন</string>
+    <string name="debug_dump_start_button">আরম্ভ</string>
+    <string name="debug_dump_email_sender_picker">আপনার ফাইলে পাঠানোর জন্য একটি প্রোগ্রাম নির্বাচন করুন</string>
+    <string name="debug_dump_email_subject">পরিচিতি Db সংযুক্ত</string>
+    <string name="debug_dump_email_body">আমার সমস্ত পরিচিতি তথ্য সহ আমার পরিচিতিগুলির ডেটাবেসটি সংযুক্ত রয়েছে। যত্নের সাথে ব্যবহার করুন।</string>
+</resources>

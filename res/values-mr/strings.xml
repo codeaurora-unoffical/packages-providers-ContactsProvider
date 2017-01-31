@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android Core Apps</string>
+    <string name="app_label">संपर्क संचयन</string>
+    <string name="provider_label">संपर्क</string>
+    <string name="upgrade_msg">संपर्क डेटाबेसची श्रेणीसुधारित करीत आहे.</string>
+    <string name="upgrade_out_of_memory_notification_ticker">संपर्क श्रेणीसुधारित करण्‍यास अधिक मेमरी आवश्‍यक आहे.</string>
+    <string name="upgrade_out_of_memory_notification_title">संपर्कांसाठी संचयन श्रेणीसुधारित करीत आहे</string>
+    <string name="upgrade_out_of_memory_notification_text">श्रेणीसुधारित करणे पूर्ण करण्‍यासाठी स्‍पर्श करा.</string>
+    <string name="default_directory">संपर्क</string>
+    <string name="local_invisible_directory">अन्य</string>
+    <string name="read_write_all_voicemail_label">सर्व व्हॉइसमेलमध्ये ऍक्सेस करा</string>
+    <string name="read_write_all_voicemail_description">अॅपला हे डिव्हाइस ऍक्सेस करू शकते अशा सर्व व्हॉइसमेलना संग्रह करण्याची आणि परत मिळवण्याची अनुमती देते.</string>
+    <string name="voicemail_from_column">&quot;कडून व्हॉईसमेल &quot;</string>
+    <string name="group_family">कुटुंब</string>
+    <string name="group_friend">मित्र</string>
+    <string name="group_work">सहकारी</string>
+    <string name="debug_dump_title">संपर्क डेटाबेस कॉपी करा</string>
+    <string name="debug_dump_database_message">आपण 1) आपल्‍या डेटाबेसची प्रत बनवणार आहात जिच्‍यामध्‍ये सर्व संपर्कांसंबंधी माहिती आणि अंतर्गत संचयनावरील कॉल लॉग समाविष्‍ट असतात आणि 2) ती ईमेल करणार आहात. आपण प्रत डिव्हाइसवरून यशस्वीरित्या कॉपी केल्यावर किंवा ईमेल प्राप्त केल्यावर लगेच ती हटविण्याचे लक्षात ठेवा.</string>
+    <string name="debug_dump_delete_button">आता हटवा</string>
+    <string name="debug_dump_start_button">प्रारंभ करा</string>
+    <string name="debug_dump_email_sender_picker">आपली फाईल पाठविण्‍यासाठी एक प्रोग्राम निवडा</string>
+    <string name="debug_dump_email_subject">संपर्क Db संलग्‍न केला</string>
+    <string name="debug_dump_email_body">संलग्‍न केलेला माझ्‍या सर्व संपर्क माहितीसह माझा संपर्क डेटाबेस आहे. काळजीपूर्वक हाताळणी करा.</string>
+</resources>
