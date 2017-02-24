@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2017, The Linux Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<resources>
+    <string name="sharedUserLabel">Android Core അപ്ലിക്കേഷനുകൾ</string>
+    <string name="app_label">കോണ്ടാക്റ്റ് സ്റ്റോറേജ്</string>
+    <string name="provider_label">ഫോണ്നമ്പറുകള് അടങ്ങിയ പുസ്തകം</string>
+    <string name="upgrade_msg">കോണ്ടാക്റ്റ്  ഡേറ്റാബേസ് അപ്ഗ്രേഡ് ചെയ്യുന്നു</string>
+    <string name="upgrade_out_of_memory_notification_ticker">കോണ്ടാക്റ്റ്സ് അപ്ഗ്രേഡ് ചെയ്യാന്‍ കൂടുതല്‍ മെമ്മറി ആവശ്യമാണ്‌.</string>
+    <string name="upgrade_out_of_memory_notification_title">കോണ്ടാക്റ്റ്സിനുള്ള സ്റ്റോറേജ് അപ്ഗ്രേഡ് ചെയ്യുന്നു</string>
+    <string name="upgrade_out_of_memory_notification_text">അപ്ഗ്രേഡ് പൂര്‍ത്തിയാക്കാന്‍ അമര്‍ത്തുക</string>
+    <string name="default_directory">ഫോണ്നമ്പറുകള് അടങ്ങിയ പുസ്തകം</string>
+    <string name="local_invisible_directory">മറ്റുള്ളവ</string>
+    <string name="read_write_all_voicemail_label">വോയിസ്മെയിലുകളെല്ലാം ആക്സസ്സ് ചെയ്യുക</string>
+    <string name="read_write_all_voicemail_description">ഈ ഉപകരണത്തിന് ആക്സസ്സുചെയ്യാനാകുന്ന എല്ലാ വോയ്സ്മെയിലുകളും സംഭരിക്കാനും വീണ്ടെടുക്കാനും ആപ്ലിക്കേഷനെ അനുവദിക്കുന്നു.</string>
+    <string name="voicemail_from_column">&quot;ഇതിൽ നിന്നുള്ള വോയ്സ്‌മെയിൽ &quot;</string>
+    <string name="group_family">കുടുംബം</string>
+    <string name="group_friend">സുഹൃത്തുക്കൾ</string>
+    <string name="group_work">സഹപ്രവര്‍ത്തകര്‍</string>
+    <string name="debug_dump_title">കോണ്ടാക്റ്റ്സ് ഡേറ്റാബേസ് പകര്‍ത്തുക</string>
+    <string name="debug_dump_database_message">നിങ്ങൾ ചെയ്യേണ്ടത് 1) കോണ്‍ടാക്റ്റിനെ സംബന്ധിക്കുന്ന എല്ലാ വിവരങ്ങളും ആന്തരിക സ്റ്റോറേജിലെ എല്ലാ കോള്‍ ലോഗ് വിവരവും ഉള്‍പെടുന്ന  നിങ്ങളുടെ ഡാറ്റബേസസിന്‍റെ ഒരു പതിപ്പ് ഉണ്ടാക്കുക, 2) അത് ഇമെയില്‍ ചെയ്യുക നിങ്ങള്‍ വിജയകരമായി കോപ്പി എടുത്ത് കഴിഞ്ഞാല്‍ അല്ലെങ്കില്‍ ഇമെയില്‍ ലഭിച്ച് കഴിഞ്ഞാല്‍ ഉടനെ തന്നെ അതിന്റെ കോപ്പി മായ്ച്ച് കളയാന്‍ മറക്കരുത്.</string>
+    <string name="debug_dump_delete_button">ഇപ്പോൾ ഇല്ലാതാക്കുക</string>
+    <string name="debug_dump_start_button">ആരംഭിക്കുക</string>
+    <string name="debug_dump_email_sender_picker">നിങ്ങളുടെ ഫയൽ അയയ്ക്കാൻ ഒരു പ്രോഗ്രാം തിരഞ്ഞെടുക്കുക</string>
+    <string name="debug_dump_email_subject">കോണ്ടാക്റ്റ്സ് Db  അറ്റാച്ച് ചെയ്തു</string>
+    <string name="debug_dump_email_body">എന്റെ എല്ലാ കോണ്‍ടാക്റ്റ് വിവരങ്ങളും ഉള്‍പ്പെടുന്ന കലണ്ടർ ഡാറ്റാബേസാണ് അറ്റാച്ചുചെയ്തിരിക്കുന്നത്. സൂക്ഷിച്ച് കൈകാര്യം ചെയ്യുക</string>
+</resources>
