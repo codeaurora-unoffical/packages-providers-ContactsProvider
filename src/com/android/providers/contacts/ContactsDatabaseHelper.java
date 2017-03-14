@@ -140,6 +140,9 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
     static final int DATABASE_VERSION = 1201;
     private static final int MINIMUM_SUPPORTED_VERSION = 700;
 
+    @VisibleForTesting
+    static final boolean DISALLOW_SUB_QUERIES = false;
+
     public interface Tables {
         public static final String CONTACTS = "contacts";
         public static final String DELETED_CONTACTS = "deleted_contacts";
@@ -353,6 +356,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         String ICU_VERSION = "icu_version";
         String LOCALE = "locale";
         String DATABASE_TIME_CREATED = "database_time_created";
+        String KNOWN_DIRECTORY_PACKAGES = "knownDirectoryPackages";
     }
 
     public interface Clauses {
@@ -4400,7 +4404,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         PropertyUtils.setProperty(getWritableDatabase(), key, value);
     }
 
-    public void clearDirectoryScanComplete() {
+    public void forceDirectoryRescan() {
         setProperty(DbProperties.DIRECTORY_SCAN_COMPLETE, "0");
     }
 
@@ -4989,15 +4993,18 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         }
         final ArrayList<String> invalidTokens = new ArrayList<>();
 
-        // Disallow referring to tables and views.  However, we exempt tables whose names are
-        // also used as column names of any tables.  (Right now it's only 'data'.)
-        invalidTokens.addAll(DatabaseAnalyzer.findTableViewsAllowingColumns(getReadableDatabase()));
+        if (DISALLOW_SUB_QUERIES) {
+            // Disallow referring to tables and views.  However, we exempt tables whose names are
+            // also used as column names of any tables.  (Right now it's only 'data'.)
+            invalidTokens.addAll(
+                    DatabaseAnalyzer.findTableViewsAllowingColumns(getReadableDatabase()));
 
-        // Disallow token "select" to disallow subqueries.
-        invalidTokens.add("select");
+            // Disallow token "select" to disallow subqueries.
+            invalidTokens.add("select");
 
-        // Allow the use of "default_directory" for now, as it used to be sort of commonly used...
-        invalidTokens.remove(Tables.DEFAULT_DIRECTORY.toLowerCase());
+            // Allow the use of "default_directory" for now, as it used to be sort of commonly used...
+            invalidTokens.remove(Tables.DEFAULT_DIRECTORY.toLowerCase());
+        }
 
         mCachedSqlChecker = new SqlChecker(invalidTokens);
 
@@ -5059,7 +5066,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
 
     private void reportInvalidSql(String callerPackage, InvalidSqlException e) {
         logWtf(String.format("%s caller=%s", e.getMessage(), callerPackage));
-        throw e; // STOPSHIP Don't throw for pre-O apps.
+        throw e;
     }
 
     /**

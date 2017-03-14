@@ -33,10 +33,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Message;
-import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.CallLog;
@@ -46,11 +42,13 @@ import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
 import android.text.TextUtils;
 import android.util.Log;
+
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.providers.contacts.CallLogDatabaseHelper.DbProperties;
 import com.android.providers.contacts.CallLogDatabaseHelper.Tables;
 import com.android.providers.contacts.util.SelectionBuilder;
 import com.android.providers.contacts.util.UserUtils;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -60,9 +58,9 @@ import java.util.concurrent.CountDownLatch;
  * Call log content provider.
  */
 public class CallLogProvider extends ContentProvider {
-    private static final String TAG = CallLogProvider.class.getSimpleName();
+    private static final String TAG = "CallLogProvider";
 
-    public static final boolean VERBOSE_LOGGING = false; // DO NOT SUBMIT WITH TRUE
+    public static final boolean VERBOSE_LOGGING = Log.isLoggable(TAG, Log.VERBOSE);
 
     private static final int BACKGROUND_TASK_INITIALIZE = 0;
     private static final int BACKGROUND_TASK_ADJUST_PHONE_ACCOUNT = 1;
@@ -166,8 +164,8 @@ public class CallLogProvider extends ContentProvider {
 
     private static Long sTimeForTestMillis;
 
-    private HandlerThread mBackgroundThread;
-    private Handler mBackgroundHandler;
+    private ContactsTaskScheduler mTaskScheduler;
+
     private volatile CountDownLatch mReadAccessLatch;
 
     private CallLogDatabaseHelper mDbHelper;
@@ -186,6 +184,11 @@ public class CallLogProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "onCreate: " + this.getClass().getSimpleName()
+                    + " user=" + android.os.Process.myUserHandle().getIdentifier());
+        }
+
         setAppOps(AppOpsManager.OP_READ_CALL_LOG, AppOpsManager.OP_WRITE_CALL_LOG);
         if (Log.isLoggable(Constants.PERFORMANCE_TAG, Log.DEBUG)) {
             Log.d(Constants.PERFORMANCE_TAG, getProviderName() + ".onCreate start");
@@ -198,19 +201,16 @@ public class CallLogProvider extends ContentProvider {
         mVoicemailPermissions = new VoicemailPermissions(context);
         mCallLogInsertionHelper = createCallLogInsertionHelper(context);
 
-        mBackgroundThread = new HandlerThread(getProviderName() + "Worker",
-                Process.THREAD_PRIORITY_BACKGROUND);
-        mBackgroundThread.start();
-        mBackgroundHandler = new Handler(mBackgroundThread.getLooper()) {
+        mReadAccessLatch = new CountDownLatch(1);
+
+        mTaskScheduler = new ContactsTaskScheduler(getClass().getSimpleName()) {
             @Override
-            public void handleMessage(Message msg) {
-                performBackgroundTask(msg.what, msg.obj);
+            public void onPerformTask(int taskId, Object arg) {
+                performBackgroundTask(taskId, arg);
             }
         };
 
-        mReadAccessLatch = new CountDownLatch(1);
-
-        scheduleBackgroundTask(BACKGROUND_TASK_INITIALIZE, null);
+        mTaskScheduler.scheduleTask(BACKGROUND_TASK_INITIALIZE, null);
 
         if (Log.isLoggable(Constants.PERFORMANCE_TAG, Log.DEBUG)) {
             Log.d(Constants.PERFORMANCE_TAG, getProviderName() + ".onCreate finish");
@@ -452,7 +452,7 @@ public class CallLogProvider extends ContentProvider {
     }
 
     void adjustForNewPhoneAccount(PhoneAccountHandle handle) {
-        scheduleBackgroundTask(BACKGROUND_TASK_ADJUST_PHONE_ACCOUNT, handle);
+        mTaskScheduler.scheduleTask(BACKGROUND_TASK_ADJUST_PHONE_ACCOUNT, handle);
     }
 
     /**
@@ -735,10 +735,6 @@ public class CallLogProvider extends ContentProvider {
         }
     }
 
-    private void scheduleBackgroundTask(int task, Object arg) {
-        mBackgroundHandler.obtainMessage(task, arg).sendToTarget();
-    }
-
     private void performBackgroundTask(int task, Object arg) {
         if (task == BACKGROUND_TASK_INITIALIZE) {
             try {
@@ -754,12 +750,6 @@ public class CallLogProvider extends ContentProvider {
 
     @Override
     public void shutdown() {
-        if (mBackgroundHandler != null) {
-            mBackgroundHandler.getLooper().quit();
-            try {
-                mBackgroundThread.join();
-            } catch (InterruptedException ignore) {
-            }
-        }
+        mTaskScheduler.shutdownForTest();
     }
 }

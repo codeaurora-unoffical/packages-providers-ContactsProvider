@@ -16,11 +16,13 @@
 package com.android.providers.contacts;
 
 import static android.provider.VoicemailContract.SOURCE_PACKAGE_FIELD;
+
 import static com.android.providers.contacts.util.DbQueryUtils.concatenateClauses;
 import static com.android.providers.contacts.util.DbQueryUtils.getEqualityClause;
 
 import android.app.AppOpsManager;
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -30,15 +32,24 @@ import android.os.Binder;
 import android.os.ParcelFileDescriptor;
 import android.provider.BaseColumns;
 import android.provider.VoicemailContract;
+import android.provider.VoicemailContract.Status;
 import android.provider.VoicemailContract.Voicemails;
+import android.util.ArraySet;
 import android.util.Log;
+
 import com.android.providers.contacts.CallLogDatabaseHelper.Tables;
 import com.android.providers.contacts.util.ContactsPermissions;
+import com.android.providers.contacts.util.PackageUtils;
 import com.android.providers.contacts.util.SelectionBuilder;
 import com.android.providers.contacts.util.TypedUriMatcherImpl;
+import com.android.providers.contacts.util.UserUtils;
+
 import com.google.common.annotations.VisibleForTesting;
+
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /**
  * An implementation of the Voicemail content provider. This class in the entry point for both
@@ -48,12 +59,24 @@ import java.util.List;
  */
 public class VoicemailContentProvider extends ContentProvider
         implements VoicemailTable.DelegateHelper {
+    private static final String TAG = "VoicemailProvider";
+
+    public static final boolean VERBOSE_LOGGING = Log.isLoggable(TAG, Log.VERBOSE);
+
+    private static final int BACKGROUND_TASK_SCAN_STALE_PACKAGES = 0;
+
+    private ContactsTaskScheduler mTaskScheduler;
+
     private VoicemailPermissions mVoicemailPermissions;
     private VoicemailTable.Delegate mVoicemailContentTable;
     private VoicemailTable.Delegate mVoicemailStatusTable;
 
     @Override
     public boolean onCreate() {
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "onCreate: " + this.getClass().getSimpleName()
+                    + " user=" + android.os.Process.myUserHandle().getIdentifier());
+        }
         if (Log.isLoggable(Constants.PERFORMANCE_TAG, Log.INFO)) {
             Log.i(Constants.PERFORMANCE_TAG, "VoicemailContentProvider.onCreate start");
         }
@@ -68,10 +91,32 @@ public class VoicemailContentProvider extends ContentProvider
                 getDatabaseHelper(context), this, createCallLogInsertionHelper(context));
         mVoicemailStatusTable = new VoicemailStatusTable(Tables.VOICEMAIL_STATUS, context,
                 getDatabaseHelper(context), this);
+
+        mTaskScheduler = new ContactsTaskScheduler(getClass().getSimpleName()) {
+            @Override
+            public void onPerformTask(int taskId, Object arg) {
+                performBackgroundTask(taskId, arg);
+            }
+        };
+
+        scheduleScanStalePackages();
+
+        ContactsPackageMonitor.start(getContext());
+
         if (Log.isLoggable(Constants.PERFORMANCE_TAG, Log.INFO)) {
             Log.i(Constants.PERFORMANCE_TAG, "VoicemailContentProvider.onCreate finish");
         }
         return true;
+    }
+
+    @VisibleForTesting
+    void scheduleScanStalePackages() {
+        scheduleTask(BACKGROUND_TASK_SCAN_STALE_PACKAGES, null);
+    }
+
+    @VisibleForTesting
+    void scheduleTask(int taskId, Object arg) {
+        mTaskScheduler.scheduleTask(taskId, arg);
     }
 
     @VisibleForTesting
@@ -103,6 +148,10 @@ public class VoicemailContentProvider extends ContentProvider
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "insert: uri=" + uri + "  values=[" + values + "]" +
+                    " CPID=" + Binder.getCallingPid());
+        }
         UriData uriData = checkPermissionsAndCreateUriDataForWrite(uri, values);
         return getTableDelegate(uriData).insert(uriData, values);
     }
@@ -110,6 +159,12 @@ public class VoicemailContentProvider extends ContentProvider
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
             String sortOrder) {
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "query: uri=" + uri + "  projection=" + Arrays.toString(projection) +
+                    "  selection=[" + selection + "]  args=" + Arrays.toString(selectionArgs) +
+                    "  order=[" + sortOrder + "] CPID=" + Binder.getCallingPid() +
+                    " User=" + UserUtils.getCurrentUserHandle(getContext()));
+        }
         UriData uriData = checkPermissionsAndCreateUriDataForRead(uri);
         SelectionBuilder selectionBuilder = new SelectionBuilder(selection);
         selectionBuilder.addClause(getPackageRestrictionClause(true/*isQuery*/));
@@ -119,6 +174,12 @@ public class VoicemailContentProvider extends ContentProvider
 
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "update: uri=" + uri +
+                    "  selection=[" + selection + "]  args=" + Arrays.toString(selectionArgs) +
+                    "  values=[" + values + "] CPID=" + Binder.getCallingPid() +
+                    " User=" + UserUtils.getCurrentUserHandle(getContext()));
+        }
         UriData uriData = checkPermissionsAndCreateUriDataForWrite(uri, values);
         SelectionBuilder selectionBuilder = new SelectionBuilder(selection);
         selectionBuilder.addClause(getPackageRestrictionClause(false/*isQuery*/));
@@ -128,6 +189,12 @@ public class VoicemailContentProvider extends ContentProvider
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "delete: uri=" + uri +
+                    "  selection=[" + selection + "]  args=" + Arrays.toString(selectionArgs) +
+                    " CPID=" + Binder.getCallingPid() +
+                    " User=" + UserUtils.getCurrentUserHandle(getContext()));
+        }
         UriData uriData = checkPermissionsAndCreateUriDataForWrite(uri);
         SelectionBuilder selectionBuilder = new SelectionBuilder(selection);
         selectionBuilder.addClause(getPackageRestrictionClause(false/*isQuery*/));
@@ -136,14 +203,25 @@ public class VoicemailContentProvider extends ContentProvider
 
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
-        UriData uriData = null;
-        if (mode.equals("r")) {
-            uriData = checkPermissionsAndCreateUriDataForRead(uri);
-        } else {
-            uriData = checkPermissionsAndCreateUriDataForWrite(uri);
+        boolean success = false;
+        try {
+            UriData uriData = null;
+            if (mode.equals("r")) {
+                uriData = checkPermissionsAndCreateUriDataForRead(uri);
+            } else {
+                uriData = checkPermissionsAndCreateUriDataForWrite(uri);
+            }
+            // openFileHelper() relies on "_data" column to be populated with the file path.
+            final ParcelFileDescriptor ret = getTableDelegate(uriData).openFile(uriData, mode);
+            success = true;
+            return ret;
+        } finally {
+            if (VERBOSE_LOGGING) {
+                Log.v(TAG, "openFile uri=" + uri + " mode=" + mode + " success=" + success +
+                        " CPID=" + Binder.getCallingPid() +
+                        " User=" + UserUtils.getCurrentUserHandle(getContext()));
+            }
         }
-        // openFileHelper() relies on "_data" column to be populated with the file path.
-        return getTableDelegate(uriData).openFile(uriData, mode);
     }
 
     /** Returns the correct table delegate object that can handle this URI. */
@@ -393,5 +471,51 @@ public class VoicemailContentProvider extends ContentProvider
     private boolean hasReadWritePermission(boolean read) {
         return read ? mVoicemailPermissions.callerHasReadAccess(getCallingPackage()) :
             mVoicemailPermissions.callerHasWriteAccess(getCallingPackage());
+    }
+
+    /** Remove all records from a given source package. */
+    public void removeBySourcePackage(String packageName) {
+        delete(Voicemails.buildSourceUri(packageName), null, null);
+        delete(Status.buildSourceUri(packageName), null, null);
+    }
+
+    @VisibleForTesting
+    void performBackgroundTask(int task, Object arg) {
+        switch (task) {
+            case BACKGROUND_TASK_SCAN_STALE_PACKAGES:
+                removeStalePackages();
+                break;
+        }
+    }
+
+    /**
+     * Remove all records made by packages that no longer exist.
+     */
+    private void removeStalePackages() {
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "scanStalePackages start");
+        }
+
+        // Make sure all source tables still exists.
+
+        // First, list all source packages.
+        final ArraySet<String> packages = mVoicemailContentTable.getSourcePackages();
+        packages.addAll(mVoicemailStatusTable.getSourcePackages());
+
+        // Remove the ones that still exist.
+        for (int i = packages.size() - 1; i >= 0; i--) {
+            final String pkg = packages.valueAt(i);
+            final boolean installed = PackageUtils.isPackageInstalled(getContext(), pkg);
+            if (VERBOSE_LOGGING) {
+                Log.v(TAG, "  " + pkg + (installed ? " installed" : " removed"));
+            }
+            if (!installed) {
+                removeBySourcePackage(pkg);
+            }
+        }
+
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "scanStalePackages finish");
+        }
     }
 }

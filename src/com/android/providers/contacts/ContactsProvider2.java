@@ -20,6 +20,7 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.OnAccountsUpdateListener;
 import android.annotation.Nullable;
+import android.annotation.WorkerThread;
 import android.app.AppOpsManager;
 import android.app.SearchManager;
 import android.content.ContentProviderOperation;
@@ -56,12 +57,8 @@ import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.CancellationSignal;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.ParcelFileDescriptor.AutoCloseInputStream;
-import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
 import android.os.SystemClock;
@@ -252,7 +249,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private static final int BACKGROUND_TASK_UPGRADE_AGGREGATION_ALGORITHM = 5;
     private static final int BACKGROUND_TASK_UPDATE_SEARCH_INDEX = 6;
     private static final int BACKGROUND_TASK_UPDATE_PROVIDER_STATUS = 7;
-    private static final int BACKGROUND_TASK_UPDATE_DIRECTORIES = 8;
     private static final int BACKGROUND_TASK_CHANGE_LOCALE = 9;
     private static final int BACKGROUND_TASK_CLEANUP_PHOTOS = 10;
     private static final int BACKGROUND_TASK_CLEAN_DELETE_LOG = 11;
@@ -1532,8 +1528,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
     private LocaleSet mCurrentLocales;
     private int mContactsAccountCount;
 
-    private HandlerThread mBackgroundThread;
-    private Handler mBackgroundHandler;
+    private ContactsTaskScheduler mTaskScheduler;
 
     private long mLastPhotoCleanup = 0;
 
@@ -1552,6 +1547,11 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
     @Override
     public boolean onCreate() {
+        if (VERBOSE_LOGGING) {
+            Log.v(TAG, "onCreate user="
+                    + android.os.Process.myUserHandle().getIdentifier());
+        }
+
         if (Log.isLoggable(Constants.PERFORMANCE_TAG, Log.DEBUG)) {
             Log.d(Constants.PERFORMANCE_TAG, "ContactsProvider2.onCreate start");
         }
@@ -1601,13 +1601,10 @@ public class ContactsProvider2 extends AbstractContactsProvider
         mReadAccessLatch = new CountDownLatch(1);
         mWriteAccessLatch = new CountDownLatch(1);
 
-        mBackgroundThread = new HandlerThread("ContactsProviderWorker",
-                Process.THREAD_PRIORITY_BACKGROUND);
-        mBackgroundThread.start();
-        mBackgroundHandler = new Handler(mBackgroundThread.getLooper()) {
+        mTaskScheduler = new ContactsTaskScheduler(getClass().getSimpleName()) {
             @Override
-            public void handleMessage(Message msg) {
-                performBackgroundTask(msg.what, msg.obj);
+            public void onPerformTask(int taskId, Object arg) {
+                performBackgroundTask(taskId, arg);
             }
         };
 
@@ -1632,6 +1629,8 @@ public class ContactsProvider2 extends AbstractContactsProvider
         scheduleBackgroundTask(BACKGROUND_TASK_OPEN_WRITE_ACCESS);
         scheduleBackgroundTask(BACKGROUND_TASK_CLEANUP_PHOTOS);
         scheduleBackgroundTask(BACKGROUND_TASK_CLEAN_DELETE_LOG);
+
+        ContactsPackageMonitor.start(getContext());
 
         return true;
     }
@@ -1733,11 +1732,11 @@ public class ContactsProvider2 extends AbstractContactsProvider
     }
 
     protected void scheduleBackgroundTask(int task) {
-        mBackgroundHandler.sendEmptyMessage(task);
+        scheduleBackgroundTask(task, null);
     }
 
     protected void scheduleBackgroundTask(int task, Object arg) {
-        mBackgroundHandler.sendMessage(mBackgroundHandler.obtainMessage(task, arg));
+        mTaskScheduler.scheduleTask(task, arg);
     }
 
     protected void performBackgroundTask(int task, Object arg) {
@@ -1805,13 +1804,6 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
             case BACKGROUND_TASK_UPDATE_PROVIDER_STATUS: {
                 updateProviderStatus();
-                break;
-            }
-
-            case BACKGROUND_TASK_UPDATE_DIRECTORIES: {
-                if (arg != null) {
-                    mContactDirectoryManager.onPackageChanged((String) arg);
-                }
                 break;
             }
 
@@ -5466,8 +5458,9 @@ public class ContactsProvider2 extends AbstractContactsProvider
         }
     }
 
+    @WorkerThread
     public void onPackageChanged(String packageName) {
-        scheduleBackgroundTask(BACKGROUND_TASK_UPDATE_DIRECTORIES, packageName);
+        mContactDirectoryManager.onPackageChanged(packageName);
     }
 
     private void removeStaleAccountRows(String table, String accountNameColumn,
@@ -10221,13 +10214,7 @@ public class ContactsProvider2 extends AbstractContactsProvider
 
     @Override
     public void shutdown() {
-        if (mBackgroundHandler != null) {
-            mBackgroundHandler.getLooper().quit();
-            try {
-                mBackgroundThread.join();
-            } catch (InterruptedException ignore) {
-            }
-        }
+        mTaskScheduler.shutdownForTest();
     }
 
     @VisibleForTesting
