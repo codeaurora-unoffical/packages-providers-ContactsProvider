@@ -137,7 +137,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
      *   1200-1299 O
      * </pre>
      */
-    static final int DATABASE_VERSION = 1201;
+    static final int DATABASE_VERSION = 1202;
     private static final int MINIMUM_SUPPORTED_VERSION = 700;
 
     @VisibleForTesting
@@ -949,7 +949,7 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
          */
         String TEMPLATE_TIMES_USED =
                 ("cast(ifnull((case when (XX) <= 0 then 0"
-                + " when (XX) < (YY) then 1"
+                + " when (XX) < (YY) then (XX)"
                 + " else (cast((XX) as int) / (YY)) * (YY) end), 0) as int)")
                 .replaceAll(CONSTANT_PLACEHOLDER, String.valueOf(TIMES_USED_GRANULARITY));
 
@@ -2651,6 +2651,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
             upgradeToVersion1201(db);
             upgradeViewsAndTriggers = true;
             oldVersion = 1201;
+        }
+
+        if (isUpgradeRequired(oldVersion, newVersion, 1202)) {
+            upgradeViewsAndTriggers = true;
+            oldVersion = 1202;
         }
 
         // We extracted "calls" and "voicemail_status" at this point, but we can't remove them here
