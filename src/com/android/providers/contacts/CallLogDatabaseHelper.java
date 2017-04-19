@@ -24,6 +24,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.CallLog.Calls;
 import android.provider.VoicemailContract;
+import android.provider.VoicemailContract.Status;
 import android.provider.VoicemailContract.Voicemails;
 import android.util.Log;
 
@@ -166,7 +167,8 @@ public class CallLogDatabaseHelper {
                     VoicemailContract.Status.DATA_CHANNEL_STATE + " INTEGER," +
                     VoicemailContract.Status.NOTIFICATION_CHANNEL_STATE + " INTEGER," +
                     VoicemailContract.Status.QUOTA_OCCUPIED + " INTEGER DEFAULT -1," +
-                    VoicemailContract.Status.QUOTA_TOTAL + " INTEGER DEFAULT -1" +
+                    VoicemailContract.Status.QUOTA_TOTAL + " INTEGER DEFAULT -1," +
+                    VoicemailContract.Status.SOURCE_TYPE + " TEXT" +
                     ");");
 
             migrateFromLegacyTables(db);
@@ -223,10 +225,12 @@ public class CallLogDatabaseHelper {
     }
 
     /**
-     * Add the {@link Calls.VIA_NUMBER} Column to the CallLog Database.
+     * Add the {@link Status.SOURCE_TYPE} Column to the VoicemailStatus Database.
      */
     private void upgradeToVersion3(SQLiteDatabase db) {
-        db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + CALLS_OPERATOR + " TEXT" + ";");  
+        db.execSQL("ALTER TABLE " + Tables.VOICEMAIL_STATUS + " ADD " + Status.SOURCE_TYPE +
+                " TEXT;");
+        db.execSQL("ALTER TABLE " + Tables.CALLS + " ADD " + CALLS_OPERATOR + " TEXT;");
     }
 
     /**
