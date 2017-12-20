@@ -142,6 +142,7 @@ public abstract class AbstractContactAggregator {
     // suggestion lookup, ignore the remaining results.
     protected static final int FIRST_LETTER_SUGGESTION_HIT_LIMIT = 100;
 
+    private static final String SIM_ACCOUNT_TYPE = "com.android.sim";
     protected final ContactsProvider2 mContactsProvider;
     protected final ContactsDatabaseHelper mDbHelper;
     protected PhotoPriorityResolver mPhotoPriorityResolver;
@@ -2004,6 +2005,9 @@ public abstract class AbstractContactAggregator {
             mContactsProvider.appendContactFilterAsNestedQuery(sb, filter);
         }
 
+        sb.append(" AND (" + RawContacts.ACCOUNT_TYPE + "!= '"
+                + SIM_ACCOUNT_TYPE + "'" + " OR "
+                +  RawContacts.ACCOUNT_TYPE + " IS NULL)");
         // Run a query and find ids of best matching contacts satisfying the filter (if any)
         ArraySet<Long> foundIds = new ArraySet<Long>();
         Cursor cursor = db.query(qb.getTables(), ContactIdQuery.COLUMNS, sb.toString(),
