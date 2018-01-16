@@ -3441,6 +3441,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 + "x_last_time_used = ifnull(last_time_used,0),"
                 + "times_used = 0,"
                 + "last_time_used = 0");
+
+        db.execSQL("UPDATE accounts SET "
+                + "account_name = ? ,account_type = ? "
+                + "where account_name = ? AND account_type = ?",
+                new Object[]{null, null, "PHONE", "com.android.localphone"});
     }
 
     /**
