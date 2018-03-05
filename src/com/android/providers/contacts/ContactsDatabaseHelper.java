@@ -2114,13 +2114,18 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         String contactsSelect = "SELECT "
                 + ContactsColumns.CONCRETE_ID + " AS " + Contacts._ID + ","
                 + contactsColumns + ", "
+                + AccountsColumns.ACCOUNT_NAME + ", "
+                + AccountsColumns.ACCOUNT_TYPE + ", "
                 + buildDisplayPhotoUriAlias(ContactsColumns.CONCRETE_ID, Contacts.PHOTO_URI) + ", "
                 + buildThumbnailPhotoUriAlias(ContactsColumns.CONCRETE_ID,
                         Contacts.PHOTO_THUMBNAIL_URI) + ", "
                 + dbForProfile() + " AS " + Contacts.IS_USER_PROFILE
                 + " FROM " + Tables.CONTACTS
                 + " JOIN " + Tables.RAW_CONTACTS + " AS name_raw_contact ON("
-                +   Contacts.NAME_RAW_CONTACT_ID + "=name_raw_contact." + RawContacts._ID + ")";
+                +   Contacts.NAME_RAW_CONTACT_ID + "=name_raw_contact." + RawContacts._ID + ")"
+                + " JOIN " + Tables.ACCOUNTS + " AS name_accounts ON("
+                + "name_raw_contact." + RawContactsColumns.ACCOUNT_ID + "=name_accounts."
+                + AccountsColumns._ID + ")";
 
         db.execSQL("CREATE VIEW " + Views.CONTACTS + " AS " + contactsSelect);
 
@@ -3447,6 +3452,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
                 + "x_last_time_used = ifnull(last_time_used,0),"
                 + "times_used = 0,"
                 + "last_time_used = 0");
+
+        db.execSQL("UPDATE accounts SET "
+                + "account_name = ? ,account_type = ? "
+                + "where account_name = ? AND account_type = ?",
+                new Object[]{null, null, "PHONE", "com.android.localphone"});
     }
 
     public void upgradeToVersion1300(SQLiteDatabase db) {
