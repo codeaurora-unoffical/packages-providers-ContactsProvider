@@ -84,6 +84,7 @@ import android.provider.ContactsContract.Settings;
 import android.provider.ContactsContract.StatusUpdates;
 import android.provider.ContactsContract.StreamItemPhotos;
 import android.provider.ContactsContract.StreamItems;
+import android.provider.DeviceConfig;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -146,6 +147,9 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
     static final boolean DISALLOW_SUB_QUERIES = false;
 
     private static final int IDLE_CONNECTION_TIMEOUT_MS = 30000;
+
+    private static final String USE_STRICT_PHONE_NUMBER_COMPARISON_KEY
+            = "use_strict_phone_number_comparison";
 
     public interface Tables {
         public static final String CONTACTS = "contacts";
@@ -997,8 +1001,11 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         mContext = context;
         mSyncState = new SyncStateContentProviderHelper();
         mCountryMonitor = new CountryMonitor(context);
-        mUseStrictPhoneNumberComparison = resources.getBoolean(
-                com.android.internal.R.bool.config_use_strict_phone_number_comparation);
+        mUseStrictPhoneNumberComparison =
+                DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_CONTACTS_PROVIDER,
+                        USE_STRICT_PHONE_NUMBER_COMPARISON_KEY,
+                resources.getBoolean(
+                    com.android.internal.R.bool.config_use_strict_phone_number_comparation));
     }
 
     public SQLiteDatabase getDatabase(boolean writable) {
@@ -2026,18 +2033,13 @@ public class ContactsDatabaseHelper extends SQLiteOpenHelper {
         String contactsSelect = "SELECT "
                 + ContactsColumns.CONCRETE_ID + " AS " + Contacts._ID + ","
                 + contactsColumns + ", "
-                + AccountsColumns.ACCOUNT_NAME + ", "
-                + AccountsColumns.ACCOUNT_TYPE + ", "
                 + buildDisplayPhotoUriAlias(ContactsColumns.CONCRETE_ID, Contacts.PHOTO_URI) + ", "
                 + buildThumbnailPhotoUriAlias(ContactsColumns.CONCRETE_ID,
                         Contacts.PHOTO_THUMBNAIL_URI) + ", "
                 + dbForProfile() + " AS " + Contacts.IS_USER_PROFILE
                 + " FROM " + Tables.CONTACTS
                 + " JOIN " + Tables.RAW_CONTACTS + " AS name_raw_contact ON("
-                +   Contacts.NAME_RAW_CONTACT_ID + "=name_raw_contact." + RawContacts._ID + ")"
-                + " JOIN " + Tables.ACCOUNTS + " AS name_accounts ON("
-                + "name_raw_contact." + RawContactsColumns.ACCOUNT_ID + "=name_accounts."
-                + AccountsColumns._ID + ")";
+                +   Contacts.NAME_RAW_CONTACT_ID + "=name_raw_contact." + RawContacts._ID + ")";
 
         db.execSQL("CREATE VIEW " + Views.CONTACTS + " AS " + contactsSelect);
 
